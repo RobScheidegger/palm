@@ -20,7 +20,7 @@ endif (UNIX)
 
 add_executable(
 	leapc_example
-	"leapc_main.c")
+	"leapc_main.c" "LeapC.h")
 
 target_link_libraries(
 	leapc_example
@@ -51,7 +51,7 @@ add_custom_command(
 add_library(
 	libExampleConnection
 	OBJECT
-	"ExampleConnection.c")
+	"ExampleConnection.c" "LeapC.h")
 
 target_link_libraries(
 	libExampleConnection
@@ -73,7 +73,7 @@ target_include_directories(
 # Add targets for each sample file.
 function(add_sample sample_name sample_source_file)
 
-  add_executable(${sample_name} ${sample_source_file})
+  add_executable(${sample_name} ${sample_source_file} "LeapC.h")
   set_property(TARGET ${sample_name} PROPERTY FOLDER "Samples")
   target_link_libraries(${sample_name} PUBLIC libExampleConnection)
 
