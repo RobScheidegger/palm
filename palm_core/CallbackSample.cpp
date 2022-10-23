@@ -1,16 +1,7 @@
-/* Copyright (C) 2012-2017 Ultraleap Limited. All rights reserved.
- *
- * Use of this code is subject to the terms of the Ultraleap SDK agreement
- * available at https://central.leapmotion.com/agreements/SdkAgreement unless
- * Ultraleap has signed a separate license agreement with you or your
- * organisation.
- *
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "LeapC.h"
-#include "LeapConnection.h"
+#include "leap/LeapConnection.hpp"
 
 static LEAP_CONNECTION* connectionHandle;
 
@@ -31,6 +22,7 @@ static void OnFrame(const LEAP_TRACKING_EVENT *frame){
 
   for(uint32_t h = 0; h < frame->nHands; h++){
     LEAP_HAND* hand = &frame->pHands[h];
+    
     printf("    Hand id %i is a %s hand with position (%f, %f, %f).\n",
                 hand->id,
                 (hand->type == eLeapHandType_Left ? "left" : "right"),

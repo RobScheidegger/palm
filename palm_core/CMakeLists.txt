@@ -20,9 +20,9 @@ endif (UNIX)
 
 add_executable(
 	palm_core
-	CallbackSample.c 
+	"CallbackSample.cpp" 
 	LeapC.h
-	LeapConnection.c LeapConnection.h
+	"leap/LeapConnection.cpp" "leap/LeapConnection.hpp"
 )
 
 target_link_libraries(

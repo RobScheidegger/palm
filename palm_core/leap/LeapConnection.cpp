@@ -1,13 +1,4 @@
-/* Copyright (C) 2012-2017 Ultraleap Limited. All rights reserved.
- *
- * Use of this code is subject to the terms of the Ultraleap SDK agreement
- * available at https://central.leapmotion.com/agreements/SdkAgreement unless
- * Ultraleap has signed a separate license agreement with you or your
- * organisation.
- *
- */
-
-#include "LeapConnection.h"
+#include "LeapConnection.hpp"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
