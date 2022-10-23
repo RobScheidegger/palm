@@ -1,14 +1,4 @@
-/* Copyright (C) 2012-2017 Ultraleap Limited. All rights reserved.
- *
- * Use of this code is subject to the terms of the Ultraleap SDK agreement
- * available at https://central.leapmotion.com/agreements/SdkAgreement unless
- * Ultraleap has signed a separate license agreement with you or your
- * organisation.
- *
- */
-
-#ifndef ExampleConnection_h
-#define ExampleConnection_h
+#pragma once
 
 #include "LeapC.h"
 
@@ -61,4 +51,3 @@ struct Callbacks{
 };
 extern struct Callbacks ConnectionCallbacks;
 extern void millisleep(int milliseconds);
-#endif /* ExampleConnection_h */

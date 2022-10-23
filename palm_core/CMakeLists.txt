@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-project(leapc_example VERSION "1.0.0" LANGUAGES C)
+project(palm_core VERSION "1.0.0" LANGUAGES C CXX)
 
 if (WIN32)
 	set(ULTRALEAP_PATH_ROOT "$ENV{ProgramFiles}/Ultraleap")
@@ -19,11 +19,14 @@ if (UNIX)
 endif (UNIX)
 
 add_executable(
-	leapc_example
-	"leapc_main.c" "LeapC.h")
+	palm_core
+	CallbackSample.c 
+	LeapC.h
+	LeapConnection.c LeapConnection.h
+)
 
 target_link_libraries(
-	leapc_example
+	palm_core
 	PRIVATE
 		LeapSDK::LeapC)
 
@@ -41,49 +44,17 @@ get_target_property(
 
 add_custom_command(
 	TARGET
-		leapc_example
+		palm_core
 	POST_BUILD
 	COMMAND
 		${CMAKE_COMMAND} -E copy
 		${LEAPC_SHARED_LIB_PATH}
-		$<TARGET_FILE_DIR:leapc_example>)
+		$<TARGET_FILE_DIR:palm_core>)
 
-add_library(
-	libExampleConnection
-	OBJECT
-	"ExampleConnection.c" "LeapC.h")
-
-target_link_libraries(
-	libExampleConnection
-	PUBLIC
-	LeapSDK::LeapC)
 
 if (UNIX)
 	target_link_libraries(
-		libExampleConnection
+		palm_core
 		PRIVATE
 		Threads::Threads)
 endif()    
-
-target_include_directories(
-	libExampleConnection
-	PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR})
-
-# Add targets for each sample file.
-function(add_sample sample_name sample_source_file)
-
-  add_executable(${sample_name} ${sample_source_file} "LeapC.h")
-  set_property(TARGET ${sample_name} PROPERTY FOLDER "Samples")
-  target_link_libraries(${sample_name} PUBLIC libExampleConnection)
-
-endfunction()
-
-
-add_sample("CallbackSample" "CallbackSample.c")
-add_sample("ImageSample" "ImageSample.c")
-add_sample("PollingSample" "PollingSample.c")
-add_sample("InterpolationSample" "InterpolationSample.c")
-if(NOT ANDROID)
-	add_sample("MultiDeviceSample" "MultiDeviceSample.c")
-endif()

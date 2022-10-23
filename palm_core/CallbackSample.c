@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "LeapC.h"
-#include "ExampleConnection.h"
+#include "LeapConnection.h"
 
 static LEAP_CONNECTION* connectionHandle;
 

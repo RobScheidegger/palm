@@ -7,7 +7,7 @@
  *
  */
 
-#include "ExampleConnection.h"
+#include "LeapConnection.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -139,13 +139,13 @@ static void handleDeviceEvent(const LEAP_DEVICE_EVENT *device_event){
   // Start with a length of 1 (pretending we don't know a priori what the length is).
   // Currently device serial numbers are all the same length, but that could change in the future
   deviceProperties.serial_length = 1;
-  deviceProperties.serial = malloc(deviceProperties.serial_length);
+  deviceProperties.serial = (char*)malloc(deviceProperties.serial_length);
   //This will fail since the serial buffer is only 1 character long
   // But deviceProperties is updated to contain the required buffer length
   result = LeapGetDeviceInfo(deviceHandle, &deviceProperties);
   if(result == eLeapRS_InsufficientBuffer){
     //try again with correct buffer size
-    deviceProperties.serial = realloc(deviceProperties.serial, deviceProperties.serial_length);
+    deviceProperties.serial = (char*)realloc(deviceProperties.serial, deviceProperties.serial_length);
     result = LeapGetDeviceInfo(deviceHandle, &deviceProperties);
     if(result != eLeapRS_Success){
       printf("Failed to get device info %s.\n", ResultString(result));
@@ -349,7 +349,7 @@ static void* serviceMessageLoop(void * unused){
  */
 void setFrame(const LEAP_TRACKING_EVENT *frame){
   LockMutex(&dataLock);
-  if(!lastFrame) lastFrame = malloc(sizeof(*frame));
+  if(!lastFrame) lastFrame = (LEAP_TRACKING_EVENT*)malloc(sizeof(*frame));
   *lastFrame = *frame;
   UnlockMutex(&dataLock);
 }
@@ -374,10 +374,10 @@ static void setDevice(const LEAP_DEVICE_INFO *deviceProps){
   if(lastDevice){
     free(lastDevice->serial);
   } else {
-    lastDevice = malloc(sizeof(*deviceProps));
+    lastDevice = (LEAP_DEVICE_INFO*)malloc(sizeof(*deviceProps));
   }
   *lastDevice = *deviceProps;
-  lastDevice->serial = malloc(deviceProps->serial_length);
+  lastDevice->serial = (char*)malloc(deviceProps->serial_length);
   memcpy(lastDevice->serial, deviceProps->serial, deviceProps->serial_length);
   UnlockMutex(&dataLock);
 }
