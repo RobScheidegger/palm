@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "LeapC.h"
+#include "lib/LeapC.h"
 #include "leap/LeapConnection.hpp"
+#include "tracking/Tracking.hpp"
 
 static LEAP_CONNECTION* connectionHandle;
 
@@ -29,6 +30,8 @@ static void OnFrame(const LEAP_TRACKING_EVENT *frame){
                 hand->palm.position.x,
                 hand->palm.position.y,
                 hand->palm.position.z);
+
+
   }
 }
 
@@ -108,9 +111,14 @@ void OnHeadPose(const LEAP_HEAD_POSE_EVENT *event) {
     event->head_angular_velocity.x,
     event->head_angular_velocity.y,
     event->head_angular_velocity.z);
- }
+}
+
+//static crow::SimpleApp wsApp;
 
 int main(int argc, char** argv) {
+
+    //handPosition = (Hand*)malloc(sizeof(Hand));
+
   //Set callback function pointers
   ConnectionCallbacks.on_connection          = &OnConnect;
   ConnectionCallbacks.on_device_found        = &OnDevice;
@@ -126,6 +134,27 @@ int main(int argc, char** argv) {
     LeapSetAllocator(*connectionHandle, &allocator);
   }
   LeapSetPolicyFlags(*connectionHandle, eLeapPolicyFlag_Images | eLeapPolicyFlag_MapPoints, 0);
+
+  /*
+  CROW_ROUTE(wsApp, "/hand")
+  ([]{
+      HandData handData = *getHandPosition();
+      wvalue pos = {
+          {"x", handData.position.x },
+          {"y", handData.position.y },
+          {"z", handData.position.z }
+      };
+
+      wvalue j = { { "hand", handData.hand }, { "position", pos } };
+      return j;
+  });
+  
+
+  wsApp.bindaddr("127.0.0.1")
+      .port(8888)
+      .multithreaded()
+      .run();
+    */
 
   printf("Press Enter to exit program.\n");
   getchar();
