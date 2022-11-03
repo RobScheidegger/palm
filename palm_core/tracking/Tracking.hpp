@@ -1,6 +1,6 @@
 #pragma once
 
-enum Hand {
+enum HandType {
 	LEFT,
 	RIGHT
 };
@@ -11,11 +11,30 @@ struct Position {
 	float z;
 };
 
-struct HandData {
-	Hand hand;
+struct FingerData {
 	Position position;
 };
 
-HandData* getHandPosition();
+struct HandData {
+	bool visible;
+	Position position;
+	FingerData fingers[5];
+};
+
+struct HandSensorData {
+	HandData left;
+	HandData right;
+
+	HandSensorData() {
+		left.visible = false;
+		left.position = Position{ 0,0,0 };
+		right.visible = false;
+		right.position = Position{ 0,0,0 };
+
+		for (int i = 0; i < 5; i++) {
+			left.fingers[i].position = Position{ 0,0,0 };
+		}
+	}
+};
 
 

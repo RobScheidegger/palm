@@ -7,6 +7,7 @@
 #include "proxy/ProxyConnection.h"
 
 static LEAP_CONNECTION* connectionHandle;
+static SOCKET* coreSocket;
 
 /** Callback for when the connection opens. */
 static void OnConnect(void){
@@ -18,14 +19,30 @@ static void OnDevice(const LEAP_DEVICE_INFO *props){
   printf("Found device %s.\n", props->serial);
 }
 
+static Position convertLeapPosition(LEAP_VECTOR vector) {
+    return Position{ vector.x, vector.y, vector.z };
+}
+
 /** Callback for when a frame of tracking data is available. */
 static void OnFrame(const LEAP_TRACKING_EVENT *frame){
   if (frame->info.frame_id % 60 == 0)
     printf("Frame %lli with %i hands.\n", (long long int)frame->info.frame_id, frame->nHands);
 
+  HandSensorData handData;
+
   for(uint32_t h = 0; h < frame->nHands; h++){
-    LEAP_HAND* hand = &frame->pHands[h];
+    const LEAP_HAND* hand = &frame->pHands[h];
+
+    const eLeapHandType type = hand->type;
+    HandData* current = (type == eLeapHandType_Right ? &handData.right : &handData.left);
+    current->position = convertLeapPosition(hand->palm.position);
+
+    for (int i = 0; i < 5; i++) {
+        current->fingers[i].position = convertLeapPosition(hand->digits[i].distal.next_joint);
+    }
     
+    sendSensorData(coreSocket, handData);
+
     printf("    Hand id %i is a %s hand with position (%f, %f, %f).\n",
                 hand->id,
                 (hand->type == eLeapHandType_Left ? "left" : "right"),
@@ -122,15 +139,13 @@ int main(int argc, char** argv) {
     }
 
     char* core_address = argv[1];
-    SOCKET* coreSocket = makeCoreSocket(core_address, PROXY_PORT);
+    coreSocket = makeCoreSocket(core_address, PROXY_PORT);
 
     if (coreSocket == NULL) {
         exit(1);
     }
 
     printf("Connection with core service established.");
-
-
 
     //Set callback function pointers
     ConnectionCallbacks.on_connection          = &OnConnect;
