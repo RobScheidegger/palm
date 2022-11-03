@@ -1,14 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib/LeapC.h"
+#include "leap/LeapC.h"
 #include "leap/LeapConnection.hpp"
 #include "tracking/Tracking.hpp"
+#include <string>
+#include "proxy/ProxyConnection.h"
 
 static LEAP_CONNECTION* connectionHandle;
 
 /** Callback for when the connection opens. */
 static void OnConnect(void){
-  printf("Connected.\n");
+  printf("Connected to Leap Tracking Service.\n");
 }
 
 /** Callback for when a device is found. */
@@ -113,55 +115,45 @@ void OnHeadPose(const LEAP_HEAD_POSE_EVENT *event) {
     event->head_angular_velocity.z);
 }
 
-//static crow::SimpleApp wsApp;
-
 int main(int argc, char** argv) {
+    if (argc != 2) {
+        fprintf(stderr, "[ERROR] Expected 1 argument (address of core instance).");
+        exit(1);
+    }
 
-    //handPosition = (Hand*)malloc(sizeof(Hand));
+    char* core_address = argv[1];
+    SOCKET* coreSocket = makeCoreSocket(core_address, PROXY_PORT);
 
-  //Set callback function pointers
-  ConnectionCallbacks.on_connection          = &OnConnect;
-  ConnectionCallbacks.on_device_found        = &OnDevice;
-  ConnectionCallbacks.on_frame               = &OnFrame;
-  ConnectionCallbacks.on_image               = &OnImage;
-  ConnectionCallbacks.on_point_mapping_change = &OnPointMappingChange;
-  ConnectionCallbacks.on_log_message         = &OnLogMessage;
-  ConnectionCallbacks.on_head_pose           = &OnHeadPose;
+    if (coreSocket == NULL) {
+        exit(1);
+    }
 
-  connectionHandle = OpenConnection();
-  {
+    printf("Connection with core service established.");
+
+
+
+    //Set callback function pointers
+    ConnectionCallbacks.on_connection          = &OnConnect;
+    ConnectionCallbacks.on_device_found        = &OnDevice;
+    ConnectionCallbacks.on_frame               = &OnFrame;
+    ConnectionCallbacks.on_image               = &OnImage;
+    ConnectionCallbacks.on_point_mapping_change = &OnPointMappingChange;
+    ConnectionCallbacks.on_log_message         = &OnLogMessage;
+    ConnectionCallbacks.on_head_pose           = &OnHeadPose;
+
+    connectionHandle = OpenConnection();
+    {
     LEAP_ALLOCATOR allocator = { allocate, deallocate, NULL };
     LeapSetAllocator(*connectionHandle, &allocator);
-  }
-  LeapSetPolicyFlags(*connectionHandle, eLeapPolicyFlag_Images | eLeapPolicyFlag_MapPoints, 0);
+    }
+    LeapSetPolicyFlags(*connectionHandle, eLeapPolicyFlag_Images | eLeapPolicyFlag_MapPoints, 0);
 
-  /*
-  CROW_ROUTE(wsApp, "/hand")
-  ([]{
-      HandData handData = *getHandPosition();
-      wvalue pos = {
-          {"x", handData.position.x },
-          {"y", handData.position.y },
-          {"z", handData.position.z }
-      };
-
-      wvalue j = { { "hand", handData.hand }, { "position", pos } };
-      return j;
-  });
+    printf("Press Enter to exit program.\n");
+    getchar();
   
+    CloseConnection();
+    DestroyConnection();
+    closeCoreSocket(coreSocket);
 
-  wsApp.bindaddr("127.0.0.1")
-      .port(8888)
-      .multithreaded()
-      .run();
-    */
-
-  printf("Press Enter to exit program.\n");
-  getchar();
-  
-  CloseConnection();
-  DestroyConnection();
-
-  return 0;
+    return 0;
 }
-//End-of-Sample
