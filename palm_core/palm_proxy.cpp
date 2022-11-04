@@ -5,9 +5,13 @@
 #include "tracking/Tracking.hpp"
 #include <string>
 #include "proxy/ProxyConnection.h"
+#include <Windows.h>
+#include "sysinfoapi.h"
 
-static LEAP_CONNECTION* connectionHandle;
-static SOCKET* coreSocket;
+static LEAP_CONNECTION* connectionHandle = NULL;
+static SOCKET* coreSocket = NULL;
+static HANDLE recordingFile = NULL;
+static long long recordingTimeStart = NULL;
 
 /** Callback for when the connection opens. */
 static void OnConnect(void){
@@ -21,6 +25,20 @@ static void OnDevice(const LEAP_DEVICE_INFO *props){
 
 static Position convertLeapPosition(LEAP_VECTOR vector) {
     return Position{ vector.x, vector.y, vector.z };
+}
+
+static void addToRecordingFile(HandSensorData& data) {
+    int msOffset = GetTickCount() - recordingTimeStart;
+    TimedHandSensorData timedData{ msOffset, data };
+    DWORD bytesWritten;
+    if (!WriteFile(
+        recordingFile,                // open file handle
+        &data,      // start of data to write
+        sizeof(TimedHandSensorData),  // number of bytes to write
+        &bytesWritten, // number of bytes that were written
+        NULL)) {
+        printf("Error writing to file\n");
+    }
 }
 
 /** Callback for when a frame of tracking data is available. */
@@ -42,6 +60,10 @@ static void OnFrame(const LEAP_TRACKING_EVENT *frame){
     }
     
     sendSensorData(coreSocket, handData);
+
+    if (recordingFile != NULL) {
+        addToRecordingFile(handData);
+    }
 
     printf("    Hand id %i is a %s hand with position (%f, %f, %f).\n",
                 hand->id,
@@ -133,8 +155,8 @@ void OnHeadPose(const LEAP_HEAD_POSE_EVENT *event) {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 2) {
-        fprintf(stderr, "[ERROR] Expected 1 argument (address of core instance).");
+    if (!(argc == 2 || argc == 3)) {
+        fprintf(stderr, "[ERROR] Expected 1 argument (address of core instance).\n");
         exit(1);
     }
 
@@ -145,7 +167,20 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    printf("Connection with core service established.");
+    printf("Connection with core service established.\n");
+
+    if (argc == 3) {
+        printf("In recording mode, opening file %s\n", argv[2]);
+        char* fileToWrite = argv[2];
+        recordingFile = CreateFile(fileToWrite, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+        if (recordingFile == INVALID_HANDLE_VALUE) {
+            printf("Failed to create/open file %s.\n", argv[2]);
+        }
+
+        DWORD currentTime = GetTickCount(); 
+        recordingTimeStart = currentTime;
+    }
 
     //Set callback function pointers
     ConnectionCallbacks.on_connection          = &OnConnect;
@@ -169,6 +204,10 @@ int main(int argc, char** argv) {
     CloseConnection();
     DestroyConnection();
     closeCoreSocket(coreSocket);
+
+    if (recordingFile) {
+        CloseHandle(recordingFile);
+    }
 
     return 0;
 }

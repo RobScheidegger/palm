@@ -37,4 +37,8 @@ struct HandSensorData {
 	}
 };
 
+struct TimedHandSensorData {
+	int time;
+	HandSensorData data;
+};
 
