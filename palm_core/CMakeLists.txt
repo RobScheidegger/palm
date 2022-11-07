@@ -21,7 +21,7 @@ if (WIN32)
 		"leap/LeapC.h"
 		"leap/LeapConnection.cpp" "leap/LeapConnection.hpp"
 		"tracking/Tracking.hpp"
-		"tracking/Tracking.cpp" "proxy/ProxyConnection.h" "proxy/ProxyConnection.cpp")
+		"proxy/ProxyConnection.h" "proxy/ProxyConnection.cpp" "state/Planning.cpp")
 
 	target_link_libraries(
 		palm_proxy
