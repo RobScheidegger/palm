@@ -4,7 +4,9 @@ project(palm VERSION "1.0.0" LANGUAGES C CXX)
 
 
 if (WIN32)
+	#########################################
 	# Build palm_proxy (only on windows)
+	#########################################
 	set(ULTRALEAP_PATH_ROOT "$ENV{ProgramFiles}/Ultraleap")
 
 	find_package(LeapSDK
@@ -48,6 +50,14 @@ if (WIN32)
 			$<TARGET_FILE_DIR:palm_proxy>)
 endif()
 
+if(UNIX)
+	#########################################
+	# Build palm_core (only on unix)
+	#########################################
+	add_executable(
+		palm_core
+		"palm_core.cpp" )
 
+endif()
 
 
