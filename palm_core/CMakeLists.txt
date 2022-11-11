@@ -54,10 +54,13 @@ if(UNIX)
 	#########################################
 	# Build palm_core (only on unix)
 	#########################################
+	find_package(Threads REQUIRED)
+
 	add_executable(
 		palm_core
 		"palm_core.cpp" )
 
+	target_link_libraries(palm_core PRIVATE Threads::Threads)
 endif()
 
 
