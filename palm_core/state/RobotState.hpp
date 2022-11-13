@@ -16,7 +16,6 @@ struct RobotState {
 	glm::vec3 velocity;
 };
 
-class SceneState {
+class SceneRobotState {
 	std::vector<RobotState> robots;
-	std::vector<Obstacle> obstacles;
-}
+};

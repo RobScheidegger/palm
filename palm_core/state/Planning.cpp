@@ -1,6 +1,6 @@
 #include "Planning.hpp"
 
-SceneState Delta(const SceneState& state, const std::vector<HandSensorData>& handData) {
+SceneRobotState Delta(const SceneRobotState& state, const std::vector<HandSensorData>& handData) {
 
 }
 
@@ -8,6 +8,6 @@ GestureAction Gesture(const std::vector<HandSensorData>& handData) {
 
 }
 
-std::vector<SceneState>& Plan(const SceneState& state, const SceneState& target) {
+std::vector<SceneRobotState>& Plan(const SceneRobotState& state, const SceneRobotState& target) {
 
 }
