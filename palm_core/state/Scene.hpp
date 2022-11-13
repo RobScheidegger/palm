@@ -6,6 +6,7 @@
 #include "../tracking/Tracking.hpp"
 #include "Planning.hpp"
 #include <optional>
+#include "Obstacles.hpp"
 
 struct PalmSceneConfiguration {
 	std::vector<glm::vec3> robotStartingPositions;
@@ -37,7 +38,7 @@ public:
 	PalmScene(PalmSceneConfiguration config) {
 		configuration = config;
 		//actualRobotState = config.robotStartingPositions;
-		obstacles = SceneObstacles{config.obstacles};
+		//obstacles = SceneObstacles{config.obstacles};
 	};
 	// Event Handling
 	void handleSensorData(HandSensorData& sensorData);

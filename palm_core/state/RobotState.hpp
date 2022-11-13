@@ -17,11 +17,11 @@ enum DeltaType {
 };
 
 enum GestureAction {
-	NONE,
-	LEFT,
-	RIGHT,
-	UP,
-	DOWN
+	GESTURE_NONE,
+	GESTURE_LEFT,
+	GESTURE_RIGHT,
+	GESTURE_UP,
+	GESTURE_DOWN
 };
 
 struct RobotState {
@@ -35,3 +35,5 @@ struct SceneRobotState {
 struct ActualRobotState {
 	std::vector<RobotState> robots;
 };
+
+float dot(const SceneRobotState& state, const ActualRobotState& actualPositions);

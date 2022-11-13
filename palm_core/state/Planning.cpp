@@ -20,7 +20,7 @@ SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotSt
 }
 
 GestureAction Gesture_Default(const HandDataQueue& handData){
-    return GestureAction::NONE;
+    return GestureAction::GESTURE_NONE;
 }
 
 #define CLOSE_THRESHOLD 0.5f

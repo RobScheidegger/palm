@@ -1,6 +1,7 @@
 #pragma once
 #include "RobotState.hpp"
 #include "../tracking/Tracking.hpp"
+#include "Utilities.hpp"
 
 SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData);
 

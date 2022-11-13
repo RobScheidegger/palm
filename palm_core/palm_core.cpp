@@ -11,11 +11,12 @@
 #include "tracking/Tracking.hpp"
 #include <errno.h>
 #include "state/Scene.hpp"
-#include <boost/program_options.hpp>
+//#include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 
 using namespace boost::asio;
-namespace po = boost::program_options;
+//namespace po = boost::program_options;
 
 static PalmScene* SCENE = NULL;
 
@@ -111,8 +112,6 @@ void run_server_loop(){
     shutdown(server_fd, SHUT_RDWR);
 }
 
-
-
 void run_communication_thread(){
     // This thread is responsible for communicating data back and forth with the simulator
     // First, connect to the simulator on port 8888
@@ -121,27 +120,61 @@ void run_communication_thread(){
     ip::tcp::socket socket(io_service);
     //connection
     socket.connect(ip::tcp::endpoint( boost::asio::ip::address::from_string("127.0.0.1"), 8888 ));
-    // request/message from client
-    const std::string msg = "Hello from Client!\n";
-    boost::system::error_code error;
-    boost::asio::write( socket, boost::asio::buffer(msg), error );
-    
- // getting response from server
-    boost::asio::streambuf receive_buffer;
-    boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
-    if( error && error != boost::asio::error::eof ) {
-        cout << "receive failed: " << error.message() << endl;
-    }
-    else {
-        const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
-        cout << data << endl;
-    }
-    return 0;
 
+    while(true){
+        std::string requestMessage = "R";
+        boost::system::error_code error;
+        boost::asio::write(socket, boost::asio::buffer(requestMessage), error);
+        
+        // getting response from server
+        boost::asio::streambuf receive_buffer;
+        boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
+        if( error && error != boost::asio::error::eof ) {
+            fprintf(stderr, "receive failed: %s\n", error.message());
+        }
+        else {
+            const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
+            std::string stringData{data};
+            std::vector<std::string> robotStrings;
+            boost::split(robotStrings, stringData, boost::is_any_of("|"));
+
+            std::vector<RobotState> robots;
+
+            for(std::string robotString : robotStrings){
+                std::vector<std::string> coordinates;
+                boost::split(coordinates, robotString, boost::is_any_of(","));
+
+                robots.push_back(RobotState{glm::vec3{
+                    std::stof(coordinates[0]), 
+                    std::stof(coordinates[1]), 
+                    std::stof(coordinates[2]), 
+                }});
+            }
+
+            ActualRobotState nextState = (*SCENE).handleReceiveRobotState(ActualRobotState{robots});
+            std::vector<std::string> returnRobotStrings;
+
+            for(int i = 0; i < nextState.robots.size(); i++){
+                RobotState robotState = nextState.robots[i];
+                returnRobotStrings.push_back(
+                    std::to_string(robotState.position.x) + "," 
+                    + std::to_string(robotState.position.y) + "," 
+                    + std::to_string(robotState.position.z));
+            }
+
+            std::string responseMessage = boost::algorithm::join(returnRobotStrings, "|");
+
+            boost::system::error_code error;
+            boost::asio::write(socket, boost::asio::buffer(responseMessage), error);
+        }
+
+        sleep(UPDATE_FREQUENCY);
+    }
 }
 
 int argsToConfiguration(int argc, char** argv, PalmSceneConfiguration& configuration){
     // Declare the supported options.
+    /*
     po::options_description desc("Allowed options");
     desc.add_options()
         ("planner", "Type of planner to use."),
@@ -152,8 +185,9 @@ int argsToConfiguration(int argc, char** argv, PalmSceneConfiguration& configura
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
-
+    */
     // Insert other command line logic here that we need
+    return 0;
 }
 
 int main(int argc, char** argv) {
@@ -174,9 +208,8 @@ int main(int argc, char** argv) {
     } 
 
     pthread_t communicatorThread;
-    int err;
-    if(err = pthread_create(&communicatorThread, NULL, (void *(*)(void *))&run_server_loop, NULL)){
-        fprintf(stderr, "Error creating server thread.\n");
+    if(err = pthread_create(&communicatorThread, NULL, (void *(*)(void *))&run_communication_thread, NULL)){
+        fprintf(stderr, "Error creating communicator thread.\n");
         handle_error_en(err, "pthread_create");
     } 
 

@@ -55,12 +55,26 @@ if(UNIX)
 	# Build palm_core (only on unix)
 	#########################################
 	find_package(Threads REQUIRED)
+	#find_package(Boost COMPONENTS program_options REQUIRED)
+	#SET(Boost_INCLUDE_DIR "/usr/include/boost/")
+	#include_directories(${Boost_INCLUDE_DIRS})
+	#link_directories(/usr/local/lib/)
 
 	add_executable(
 		palm_core
-		"palm_core.cpp" )
+		"state/Utilities.hpp"
+		"tracking/Tracking.hpp"
+		"state/RobotState.hpp" "state/RobotState.cpp"
+		"state/Obstacles.hpp"
+		"state/Planning.hpp" "state/Planning.cpp"
+		"state/Scene.hpp" "state/Scene.cpp"
+		"palm_core.cpp" 
+		)
 
 	target_link_libraries(palm_core PRIVATE Threads::Threads)
+
+	#target_link_libraries(palm_core LINK_PUBLIC ${Boost_LIBRARIES})
+
 endif()
 
 

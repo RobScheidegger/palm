@@ -18,7 +18,7 @@ CANCEL_EVENT = Event()
 TAKEOFF_DURATION = 2.5
 HOVER_DURATION = 5.0
 
-def listen(cf_positions):
+def listen(cf_positions, cf_current_positions):
 
     class PalmCoreHandler(asyncore.dispatcher_with_send):
 
@@ -27,9 +27,10 @@ def listen(cf_positions):
             string_data = str(data)
             print("[palm_sim] Received data: ", string_data)
 
-            if len(string_data) == 1 and string_data == "R":
+            if string_data == "R":
                 # Request for a current state
-                self.send("CURRENT STATE")
+                response = str.join("|", cf_current_positions)
+                self.send(response)
             else:
                 # Otherwise, assume it is a command set of new positions
                 robots = string_data.split('|')
@@ -64,28 +65,27 @@ def main():
     SWARM = Crazyswarm()
     timeHelper = SWARM.timeHelper
 
-    CF_POSITIONS = [(1,1,1),(2,2,2)]
+    CF_GOAL_POSITIONS = [(1,1,1)]
+    CF_CURRENT_POSITIONS = [(1,1,1)]
 
-    listen_thread = Thread(target=listen, args=(CF_POSITIONS,))
+    listen_thread = Thread(target=listen, args=(CF_GOAL_POSITIONS,CF_CURRENT_POSITIONS))
     listen_thread.start()
     
     for cf in SWARM.allcfs.crazyflies:
         cf.takeoff(1, TAKEOFF_DURATION)
 
     while True:
-        for position, i in zip(CF_POSITIONS, range(len(CF_POSITIONS))):
+        for position, i in zip(CF_GOAL_POSITIONS, range(len(CF_GOAL_POSITIONS))):
             cf = SWARM.allcfs.crazyflies[i]
             cf.cmdPosition(position)
+            current_position = cf.position()
+            CF_CURRENT_POSITIONS[i] = f"{current_position[0]},{current_position[1]},{current_position[2]}"
 
         timeHelper.sleep(UPDATE_SLEEP_TIME)
-        
-
 
     print("Press any key to stop simulation...")
 
     input();
-    
-    timeHelper.sleep(TAKEOFF_DURATION + HOVER_DURATION)
     
 
 if __name__ == "__main__":

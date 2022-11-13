@@ -19,7 +19,7 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
         //No new planning, use old trajectory. 
         // Check if the front of the trajectory queue is close to the current position
         // If so, pop it off of the queue.
-        if(dot(trajectoryQueue.front(), actualRobotState) < TRAJECTORY_THRESHOLD){
+        if(dot(SceneRobotState{trajectoryQueue.front().robots}, actualRobotState) < TRAJECTORY_THRESHOLD){
             trajectoryQueue.pop();
         }
     } else {
