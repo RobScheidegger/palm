@@ -30,6 +30,7 @@ def listen(cf_positions, cf_current_positions):
             if string_data == "R":
                 # Request for a current state
                 response = str.join("|", cf_current_positions)
+                print("[palm_sim] Returning response: ", response)
                 self.send(response)
             else:
                 # Otherwise, assume it is a command set of new positions

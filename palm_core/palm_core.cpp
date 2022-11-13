@@ -11,12 +11,10 @@
 #include "tracking/Tracking.hpp"
 #include <errno.h>
 #include "state/Scene.hpp"
-//#include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 
 using namespace boost::asio;
-//namespace po = boost::program_options;
 
 static PalmScene* SCENE = NULL;
 
@@ -54,12 +52,12 @@ void proxy_thread(int socket_id){
 }
 
 void run_server_loop(){
-    int server_fd, new_socket, valread;
+    long new_socket;
+    int server_fd, valread;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = { 0 };
-    char* hello = "Hello from server";
 
     std::vector<pthread_t> threads;
  
@@ -116,10 +114,12 @@ void run_communication_thread(){
     // This thread is responsible for communicating data back and forth with the simulator
     // First, connect to the simulator on port 8888
     boost::asio::io_service io_service;
-    //socket creation
+    
     ip::tcp::socket socket(io_service);
-    //connection
+    fprintf(stderr, "[palm_core::communication] Trying to open a socket connection to the sim.\n");
+    
     socket.connect(ip::tcp::endpoint( boost::asio::ip::address::from_string("127.0.0.1"), 8888 ));
+    fprintf(stderr, "[palm_core::communication] Established socket connection to the sim.\n");
 
     while(true){
         std::string requestMessage = "R";
@@ -130,7 +130,7 @@ void run_communication_thread(){
         boost::asio::streambuf receive_buffer;
         boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
         if( error && error != boost::asio::error::eof ) {
-            fprintf(stderr, "receive failed: %s\n", error.message());
+            fprintf(stderr, "receive failed: %s\n", error.message().c_str());
         }
         else {
             const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
