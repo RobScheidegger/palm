@@ -1,2 +1,9 @@
 #pragma once
+#include "RobotState.hpp"
+#include "../tracking/Tracking.hpp"
 
+SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData);
+
+GestureAction Gesture_Default(const HandDataQueue& handData);
+
+std::vector<ActualRobotState> Plan_Linear(const ActualRobotState& state, const SceneRobotState& target);
