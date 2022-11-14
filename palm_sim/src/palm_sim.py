@@ -24,14 +24,15 @@ def listen(cf_positions, cf_current_positions):
 
         def handle_read(self):
             data = self.recv(BUFFER_SIZE)
-            string_data = str(data)
+            string_data = data.decode('utf-8')
             print("[palm_sim] Received data: ", string_data)
 
             if string_data == "R":
+                print("[palm_sim::listen] ")
                 # Request for a current state
-                response = str.join("|", cf_current_positions)
+                response = str.join("|", cf_current_positions) + "\n"
                 print("[palm_sim] Returning response: ", response)
-                self.send(response)
+                self.send(response.encode('utf-8'))
             else:
                 # Otherwise, assume it is a command set of new positions
                 robots = string_data.split('|')
@@ -51,7 +52,7 @@ def listen(cf_positions, cf_current_positions):
         def handle_accepted(self, sock, addr):
             print('Incoming connection from %s' % repr(addr))
             handler = PalmCoreHandler(sock)
-
+#
     proxy_server = PalmCoreSimProxyServer('localhost', PALM_CORE_PROXY_PORT)
     print("[palm_sim] Proxy server initiated, waiting for incoming connections.")
     asyncore.loop()
@@ -59,7 +60,7 @@ def listen(cf_positions, cf_current_positions):
     #while True:
     #    sleep(UPDATE_SLEEP_TIME)
     #    positions = []
-    #    for i in range(2):
+    #    for i in range(1):
     #        cf_positions[i] = (abs(random.gauss(0, 1)), abs(random.gauss(0, 1)), abs(random.gauss(0, 1)))
 
 def main():

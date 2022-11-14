@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 #include <pthread.h>
 #include "Planning.hpp"
+#include <stdio.h>
 
 void PalmScene::handleSensorData(HandSensorData& data){
     pthread_mutex_lock(&sceneMutex);
@@ -12,16 +13,15 @@ void PalmScene::handleSensorData(HandSensorData& data){
 #define PLAN_THRESHOLD 0.5
 
 ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actualState){
+    ActualRobotState returnState;
     pthread_mutex_lock(&sceneMutex);
     actualRobotState = actualState;
+    printf("[PalmScene::handleReceiveRobotState] Computing delta difference.");
     SceneRobotState deltaState = Delta(this->state, actualState, handData);
     if(dot(deltaState, actualState) < 0.5){
-        //No new planning, use old trajectory. 
+        // No new planning, use old trajectory. 
         // Check if the front of the trajectory queue is close to the current position
         // If so, pop it off of the queue.
-        if(dot(SceneRobotState{trajectoryQueue.front().robots}, actualRobotState) < TRAJECTORY_THRESHOLD){
-            trajectoryQueue.pop();
-        }
     } else {
         // Need to plan to that new state
         std::vector<ActualRobotState> trajectory = Plan(actualState, deltaState);
@@ -32,7 +32,14 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
             trajectoryQueue.push(trajectory[i]);
         }
     }
+    if(!trajectoryQueue.empty() && dot(SceneRobotState{trajectoryQueue.front().robots}, actualRobotState) < TRAJECTORY_THRESHOLD){
+        returnState = trajectoryQueue.front();
+        trajectoryQueue.pop();
+    } else {
+        returnState = actualState;
+    }
     pthread_mutex_unlock(&sceneMutex);
+    return returnState;
 }
 
 SceneRobotState PalmScene::Delta(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData){

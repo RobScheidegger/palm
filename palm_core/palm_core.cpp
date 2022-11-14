@@ -16,8 +16,6 @@
 
 using namespace boost::asio;
 
-static PalmScene* SCENE = NULL;
-
 static const float UPDATE_FREQUENCY = 1.0f / 20.0f;
 
 #define handle_error_en(en, msg) \
@@ -41,9 +39,9 @@ void proxy_thread(int socket_id){
         memcpy(sensor_data, buffer, sizeof(HandSensorData));
         
         // Insert the newly found sensor data into the scene.
-        if(SCENE){
-            (*SCENE).handleSensorData(*sensor_data);
-        }
+        //if(SCENE){
+        //    (*SCENE).handleSensorData(*sensor_data);
+        //}
         
         free(sensor_data);
     }
@@ -88,7 +86,7 @@ void run_server_loop(){
         exit(EXIT_FAILURE);
     }
 
-    printf("Server started, listening for connections.\n");
+    printf("[palm_core::server] Server started, listening for connections.\n");
 
     while(true){
         if ((new_socket
@@ -110,9 +108,15 @@ void run_server_loop(){
     shutdown(server_fd, SHUT_RDWR);
 }
 
-void run_communication_thread(){
+struct CommunicationThreadParameters{
+    PalmScene* scene;
+};
+
+void run_communication_thread(CommunicationThreadParameters* threadParameters){
     // This thread is responsible for communicating data back and forth with the simulator
     // First, connect to the simulator on port 8888
+    PalmScene* scene = threadParameters->scene;
+    fprintf(stderr, "Scene: %i, Param: %i", scene, threadParameters);
     boost::asio::io_service io_service;
     
     ip::tcp::socket socket(io_service);
@@ -125,48 +129,46 @@ void run_communication_thread(){
         std::string requestMessage = "R";
         boost::system::error_code error;
         boost::asio::write(socket, boost::asio::buffer(requestMessage), error);
-        
         // getting response from server
         boost::asio::streambuf receive_buffer;
-        boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
-        if( error && error != boost::asio::error::eof ) {
-            fprintf(stderr, "receive failed: %s\n", error.message().c_str());
+        boost::asio::read_until(socket, receive_buffer, "\n", error);
+
+        const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
+        fprintf(stderr, "[palm_core::communication] Received sim data: %s\n", data);
+        std::string stringData{data};
+        if(stringData.length() < 4)
+            continue;
+        std::vector<std::string> robotStrings;
+        boost::split(robotStrings, stringData, boost::is_any_of("|"));
+
+        std::vector<RobotState> robots;
+
+        for(std::string robotString : robotStrings){
+            std::vector<std::string> coordinates;
+            boost::split(coordinates, robotString, boost::is_any_of(","));
+
+            robots.push_back(RobotState{glm::vec3{
+                std::stof(coordinates[0]), 
+                std::stof(coordinates[1]), 
+                std::stof(coordinates[2]), 
+            }});
         }
-        else {
-            const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
-            std::string stringData{data};
-            std::vector<std::string> robotStrings;
-            boost::split(robotStrings, stringData, boost::is_any_of("|"));
-
-            std::vector<RobotState> robots;
-
-            for(std::string robotString : robotStrings){
-                std::vector<std::string> coordinates;
-                boost::split(coordinates, robotString, boost::is_any_of(","));
-
-                robots.push_back(RobotState{glm::vec3{
-                    std::stof(coordinates[0]), 
-                    std::stof(coordinates[1]), 
-                    std::stof(coordinates[2]), 
-                }});
-            }
-
-            ActualRobotState nextState = (*SCENE).handleReceiveRobotState(ActualRobotState{robots});
-            std::vector<std::string> returnRobotStrings;
-
-            for(int i = 0; i < nextState.robots.size(); i++){
-                RobotState robotState = nextState.robots[i];
-                returnRobotStrings.push_back(
-                    std::to_string(robotState.position.x) + "," 
-                    + std::to_string(robotState.position.y) + "," 
-                    + std::to_string(robotState.position.z));
-            }
-
-            std::string responseMessage = boost::algorithm::join(returnRobotStrings, "|");
-
-            boost::system::error_code error;
-            boost::asio::write(socket, boost::asio::buffer(responseMessage), error);
+        fprintf(stderr, "[palm_core::communication] State processing sim data.\n");
+        ActualRobotState nextState = (*scene).handleReceiveRobotState(ActualRobotState{robots});
+        std::vector<std::string> returnRobotStrings;
+        fprintf(stderr, "[palm_core::communication] Processed sim data. Constructing response string.\n");
+        fprintf(stderr, "Robot size: %lu\n", nextState.robots.size());
+        for(size_t i = 0; i < nextState.robots.size(); i++){
+            RobotState robotState = nextState.robots[i];
+            returnRobotStrings.push_back(
+                std::to_string(robotState.position.x) + "," 
+                + std::to_string(robotState.position.y) + "," 
+                + std::to_string(robotState.position.z));
         }
+
+        std::string responseMessage = boost::algorithm::join(returnRobotStrings, "|");
+        fprintf(stderr, "[palm_core::communication] Constructed response string.\n");
+        boost::asio::write(socket, boost::asio::buffer(responseMessage), error);
 
         sleep(UPDATE_FREQUENCY);
     }
@@ -198,7 +200,7 @@ int main(int argc, char** argv) {
     if(argsToConfiguration(argc, argv, config)){
         return -1;
     }
-    SCENE = new PalmScene(config);
+    PalmScene* scene = new PalmScene(config);
    
     pthread_t serverThread;
     int err;
@@ -208,18 +210,20 @@ int main(int argc, char** argv) {
     } 
 
     pthread_t communicatorThread;
-    if(err = pthread_create(&communicatorThread, NULL, (void *(*)(void *))&run_communication_thread, NULL)){
+    CommunicationThreadParameters* communicatorParameters = (CommunicationThreadParameters*)malloc(sizeof(CommunicationThreadParameters));
+    communicatorParameters->scene = scene;
+    if(err = pthread_create(&communicatorThread, NULL, (void *(*)(void *))&run_communication_thread, communicatorParameters)){
         fprintf(stderr, "Error creating communicator thread.\n");
         handle_error_en(err, "pthread_create");
     } 
 
-    printf("Server started.\n");
+    printf("[palm_core::main] Server started.\n");
 
-    printf("Press any key to exit.\n");
+    printf("[palm_code::main] Press any key to exit.\n");
     getchar();
 
     pthread_cancel(serverThread);
-    free(SCENE);
+    free(scene);
 
     return 0;
 }

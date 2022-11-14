@@ -7,6 +7,7 @@
 #include "Planning.hpp"
 #include <optional>
 #include "Obstacles.hpp"
+#include <pthread.h>
 
 struct PalmSceneConfiguration {
 	std::vector<glm::vec3> robotStartingPositions;
@@ -22,11 +23,11 @@ struct PalmSceneConfiguration {
 */
 class PalmScene {
 private:
-	pthread_mutex_t sceneMutex;
+	pthread_mutex_t sceneMutex = PTHREAD_MUTEX_INITIALIZER;
 
 	SceneRobotState state;
 	ActualRobotState actualRobotState;
-	std::queue<ActualRobotState> trajectoryQueue;
+	std::queue<ActualRobotState> trajectoryQueue{};
 	SceneObstacles obstacles;
 	HandDataQueue handData;
 	PalmSceneConfiguration configuration;

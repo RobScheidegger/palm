@@ -4,6 +4,9 @@
 SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData){
     SceneRobotState newRobotState;
     // Take the last one and set the ideal positions acordingly
+    if(handData.empty()){
+        return state;
+    }
     const HandSensorData firstData = handData.back();
 
     if(!firstData.left.visible)

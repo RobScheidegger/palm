@@ -25,15 +25,15 @@ enum GestureAction {
 };
 
 struct RobotState {
-	glm::vec3 position;
+	glm::vec3 position{0,0,0};
 };
 
 struct SceneRobotState {
-	std::vector<RobotState> robots;
+	std::vector<RobotState> robots = std::vector<RobotState>{};
 };
 
 struct ActualRobotState {
-	std::vector<RobotState> robots;
+	std::vector<RobotState> robots = std::vector<RobotState>{};
 };
 
 float dot(const SceneRobotState& state, const ActualRobotState& actualPositions);
