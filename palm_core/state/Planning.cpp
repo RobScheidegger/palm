@@ -1,5 +1,6 @@
 #include "Planning.hpp"
 #include "Utilities.hpp"
+#include <stdio.h>
 
 SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData){
     SceneRobotState newRobotState;
@@ -8,12 +9,14 @@ SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotSt
         return state;
     }
     const HandSensorData firstData = handData.back();
+    
 
-    if(!firstData.left.visible)
+    if(!firstData.right.visible)
         return state;
     int numRobots = state.robots.size();
     for(int i = 0; i < numRobots && i < 5; i++){
         const FingerData& finger = firstData.right.fingers[i];
+        fprintf(stderr, "Finger pos: %f, %f, %f\n", finger.position.x, finger.position.y, finger.position.z);
 
         RobotState robot{glm::vec3(finger.position.x, finger.position.y, finger.position.z)};
         newRobotState.robots.push_back(robot);

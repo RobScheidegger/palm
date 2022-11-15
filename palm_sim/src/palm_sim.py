@@ -27,18 +27,16 @@ def listen(cf_positions, cf_current_positions):
             string_data = data.decode('utf-8')
             print("[palm_sim] Received data: ", string_data)
 
-            if string_data == "R":
-                print("[palm_sim::listen] ")
-                # Request for a current state
-                response = str.join("|", cf_current_positions) + "\n"
-                print("[palm_sim] Returning response: ", response)
-                self.send(response.encode('utf-8'))
-            else:
-                # Otherwise, assume it is a command set of new positions
+            if string_data != "R":
                 robots = string_data.split('|')
                 for robot_data, i in zip(robots, range(len(robots))):
-                    position = list(map(int, robot_data.split(',')))
+                    position = list(map(float, robot_data.split(',')))
                     cf_positions[i] = position
+            # Reply with current state
+            response = str.join("|", cf_current_positions) + "\n"
+            print("[palm_sim] Returning response: ", response)
+            self.send(response.encode('utf-8'))
+                
 
     class PalmCoreSimProxyServer(asyncore.dispatcher):
 

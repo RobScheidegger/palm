@@ -17,6 +17,7 @@
 using namespace boost::asio;
 
 static const float UPDATE_FREQUENCY = 1.0f / 20.0f;
+static PalmScene* GLOBAL_SCENE = NULL;
 
 #define handle_error_en(en, msg) \
     do {                         \
@@ -24,6 +25,11 @@ static const float UPDATE_FREQUENCY = 1.0f / 20.0f;
         perror(msg);             \
         exit(EXIT_FAILURE);      \
     } while (0)
+
+struct ProxyThreadParameters{
+    int socket_id;
+    PalmScene* scene;
+};
 
 void proxy_thread(int socket_id){
     fprintf(stderr, "Proxy thread started on socket %i\n", socket_id);
@@ -38,10 +44,11 @@ void proxy_thread(int socket_id){
         HandSensorData* sensor_data = (HandSensorData*)malloc(sizeof(HandSensorData));
         memcpy(sensor_data, buffer, sizeof(HandSensorData));
         
-        // Insert the newly found sensor data into the scene.
-        //if(SCENE){
-        //    (*SCENE).handleSensorData(*sensor_data);
-        //}
+        //Insert the newly found sensor data into the scene.
+        if(GLOBAL_SCENE){
+            fprintf(stderr, "[palm_core:sim_proxy] Updating hand data.\n");
+            (*GLOBAL_SCENE).handleSensorData(*sensor_data);
+        }
         
         free(sensor_data);
     }
@@ -124,17 +131,22 @@ void run_communication_thread(CommunicationThreadParameters* threadParameters){
     
     socket.connect(ip::tcp::endpoint( boost::asio::ip::address::from_string("127.0.0.1"), 8888 ));
     fprintf(stderr, "[palm_core::communication] Established socket connection to the sim.\n");
+    std::string requestMessage = "R";
 
     while(true){
-        std::string requestMessage = "R";
         boost::system::error_code error;
         boost::asio::write(socket, boost::asio::buffer(requestMessage), error);
         // getting response from server
         boost::asio::streambuf receive_buffer;
-        boost::asio::read_until(socket, receive_buffer, "\n", error);
+        size_t bytesRead = boost::asio::read(socket, receive_buffer, boost::asio::transfer_at_least(5), error);
+
+        if(error.failed()){
+            fprintf(stderr, "[palm_core::communication] Failed to receive data from sim. Aborting.\n");
+            break;
+        }
 
         const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
-        fprintf(stderr, "[palm_core::communication] Received sim data: %s\n", data);
+        //fprintf(stderr, "[palm_core::communication] Received sim data: %s\n", data);
         std::string stringData{data};
         if(stringData.length() < 4)
             continue;
@@ -153,11 +165,8 @@ void run_communication_thread(CommunicationThreadParameters* threadParameters){
                 std::stof(coordinates[2]), 
             }});
         }
-        fprintf(stderr, "[palm_core::communication] State processing sim data.\n");
         ActualRobotState nextState = (*scene).handleReceiveRobotState(ActualRobotState{robots});
         std::vector<std::string> returnRobotStrings;
-        fprintf(stderr, "[palm_core::communication] Processed sim data. Constructing response string.\n");
-        fprintf(stderr, "Robot size: %lu\n", nextState.robots.size());
         for(size_t i = 0; i < nextState.robots.size(); i++){
             RobotState robotState = nextState.robots[i];
             returnRobotStrings.push_back(
@@ -166,10 +175,7 @@ void run_communication_thread(CommunicationThreadParameters* threadParameters){
                 + std::to_string(robotState.position.z));
         }
 
-        std::string responseMessage = boost::algorithm::join(returnRobotStrings, "|");
-        fprintf(stderr, "[palm_core::communication] Constructed response string.\n");
-        boost::asio::write(socket, boost::asio::buffer(responseMessage), error);
-
+        requestMessage = boost::algorithm::join(returnRobotStrings, "|");
         sleep(UPDATE_FREQUENCY);
     }
 }
@@ -201,7 +207,8 @@ int main(int argc, char** argv) {
         return -1;
     }
     PalmScene* scene = new PalmScene(config);
-   
+    GLOBAL_SCENE = scene;
+
     pthread_t serverThread;
     int err;
     if(err = pthread_create(&serverThread, NULL, (void *(*)(void *))&run_server_loop, NULL)){

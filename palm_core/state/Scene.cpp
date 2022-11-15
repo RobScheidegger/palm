@@ -16,7 +16,6 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
     ActualRobotState returnState;
     pthread_mutex_lock(&sceneMutex);
     actualRobotState = actualState;
-    printf("[PalmScene::handleReceiveRobotState] Computing delta difference.");
     SceneRobotState deltaState = Delta(this->state, actualState, handData);
     if(dot(deltaState, actualState) < 0.5){
         // No new planning, use old trajectory. 
