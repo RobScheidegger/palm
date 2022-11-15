@@ -31,6 +31,10 @@ private:
 	SceneObstacles obstacles;
 	HandDataQueue handData;
 	PalmSceneConfiguration configuration;
+	// Whether or not we have inherited the current robot state from the simulator
+	// This prevents having to have multiple sets of identical defaults on both the simulator and palm_core
+	bool hasInitialState = false;
+	int num_robots;
 	
 	SceneRobotState Delta(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData);
 	GestureAction Gesture(const HandDataQueue& handData);

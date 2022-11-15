@@ -16,7 +16,7 @@
 
 using namespace boost::asio;
 
-static const float UPDATE_FREQUENCY = 1.0f / 20.0f;
+static const float UPDATE_FREQUENCY = 1.0f / 5.0f;
 static PalmScene* GLOBAL_SCENE = NULL;
 
 #define handle_error_en(en, msg) \
@@ -123,7 +123,6 @@ void run_communication_thread(CommunicationThreadParameters* threadParameters){
     // This thread is responsible for communicating data back and forth with the simulator
     // First, connect to the simulator on port 8888
     PalmScene* scene = threadParameters->scene;
-    fprintf(stderr, "Scene: %i, Param: %i", scene, threadParameters);
     boost::asio::io_service io_service;
     
     ip::tcp::socket socket(io_service);

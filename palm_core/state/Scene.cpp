@@ -16,6 +16,15 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
     ActualRobotState returnState;
     pthread_mutex_lock(&sceneMutex);
     actualRobotState = actualState;
+
+    if(!hasInitialState){
+        // Initial state has not been setup.
+        state.robots = actualState.robots;
+        hasInitialState = true;
+        num_robots = state.robots.size();
+        fprintf(stderr, "[PalmScene::handleReeiveRobotState] Initialized with %d robots.\n", num_robots);
+    }
+
     SceneRobotState deltaState = Delta(this->state, actualState, handData);
     if(dot(deltaState, actualState) < 0.5){
         // No new planning, use old trajectory. 
