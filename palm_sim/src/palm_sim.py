@@ -10,7 +10,7 @@ import random
 SWARM = None
 BUFFER_SIZE = 8192
 PALM_CORE_PROXY_PORT = 8888
-UPDATE_HZ = 60.0
+UPDATE_HZ = 10.0
 UPDATE_SLEEP_TIME = 1.0 / UPDATE_HZ
 CANCEL_EVENT = Event()
 
@@ -52,26 +52,33 @@ def listen(cf_positions, cf_current_positions):
     proxy_server = PalmCoreSimProxyServer('localhost', PALM_CORE_PROXY_PORT)
     print("[palm_sim] Proxy server initiated, waiting for incoming connections.")
     asyncore.loop()
-    
-    #while True:
-    #    sleep(UPDATE_SLEEP_TIME)
-    #    positions = []
-    #    for i in range(1):
-    #        cf_positions[i] = (abs(random.gauss(0, 1)), abs(random.gauss(0, 1)), abs(random.gauss(0, 1)))
+
 
 def main():
     SWARM = Crazyswarm()
     timeHelper = SWARM.timeHelper
-
-    CF_GOAL_POSITIONS = [(1,1,1)]
-    CF_CURRENT_POSITIONS = [(1,1,1)]
-
-    listen_thread = Thread(target=listen, args=(CF_GOAL_POSITIONS,CF_CURRENT_POSITIONS))
-    listen_thread.start()
     
+    print("[palm_sim] Swarm initialized, taking off.")
+
     for cf in SWARM.allcfs.crazyflies:
         cf.takeoff(1, TAKEOFF_DURATION)
 
+    timeHelper.sleep(TAKEOFF_DURATION + 0.1)
+    CF_GOAL_POSITIONS = []
+    CF_CURRENT_POSITIONS = []
+
+    print("[palm_sim] Takeoff completed, getting initial positions.");
+
+    for cf in SWARM.allcfs.crazyflies:
+        pos = cf.position()
+        CF_GOAL_POSITIONS.append(pos)
+        CF_CURRENT_POSITIONS.append(f"{pos[0]},{pos[1]},{pos[2]}")
+
+    print("[palm_sim] Initializing listener thread (to palm_core).")
+    listen_thread = Thread(target=listen, args=(CF_GOAL_POSITIONS,CF_CURRENT_POSITIONS))
+    listen_thread.start()
+
+    print(f"[palm_sim] Entering update loop at {UPDATE_HZ} hz.")
     while True:
         for position, i in zip(CF_GOAL_POSITIONS, range(len(CF_GOAL_POSITIONS))):
             cf = SWARM.allcfs.crazyflies[i]
@@ -80,10 +87,6 @@ def main():
             CF_CURRENT_POSITIONS[i] = f"{current_position[0]},{current_position[1]},{current_position[2]}"
 
         timeHelper.sleep(UPDATE_SLEEP_TIME)
-
-    print("Press any key to stop simulation...")
-
-    input();
     
 
 if __name__ == "__main__":
