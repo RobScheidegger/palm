@@ -49,5 +49,6 @@ void closeCoreSocket(SOCKET* socket) {
 }
 
 void sendSensorData(SOCKET* socket, HandSensorData data) {
-    send(*socket, (char*)(void*)&data, sizeof(HandSensorData), 0);
+    if (send(*socket, (char*)(void*)&data, sizeof(HandSensorData), 0))
+        exit(1);
 }

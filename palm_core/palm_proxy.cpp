@@ -12,6 +12,7 @@ static LEAP_CONNECTION* connectionHandle = NULL;
 static SOCKET* coreSocket = NULL;
 static HANDLE recordingFile = NULL;
 static long long recordingTimeStart = NULL;
+static int SENSOR_DATA_FACTOR = 3;
 
 /** Callback for when the connection opens. */
 static void OnConnect(void){
@@ -46,6 +47,9 @@ static void OnFrame(const LEAP_TRACKING_EVENT *frame){
   if (frame->info.frame_id % 60 == 0)
     printf("Frame %lli with %i hands.\n", (long long int)frame->info.frame_id, frame->nHands);
 
+  if (frame->info.frame_id % SENSOR_DATA_FACTOR != 0)
+      return;
+
   HandSensorData handData;
 
   for(uint32_t h = 0; h < frame->nHands; h++){
@@ -54,6 +58,7 @@ static void OnFrame(const LEAP_TRACKING_EVENT *frame){
     const eLeapHandType type = hand->type;
     HandData* current = (type == eLeapHandType_Right ? &handData.right : &handData.left);
     current->position = convertLeapPosition(hand->palm.position);
+    current->visible = true;
 
     for (int i = 0; i < 5; i++) {
         current->fingers[i].position = convertLeapPosition(hand->digits[i].distal.next_joint);
@@ -74,13 +79,6 @@ static void OnFrame(const LEAP_TRACKING_EVENT *frame){
 
 
   }
-}
-
-static void OnImage(const LEAP_IMAGE_EVENT *image){
-  printf("Image %lli  => Left: %d x %d (bpp=%d), Right: %d x %d (bpp=%d)\n",
-      (long long int)image->info.frame_id,
-      image->image[0].properties.width,image->image[0].properties.height,image->image[0].properties.bpp*8,
-      image->image[1].properties.width,image->image[1].properties.height,image->image[1].properties.bpp*8);
 }
 
 static void OnLogMessage(const eLeapLogSeverity severity, const int64_t timestamp,
@@ -186,7 +184,6 @@ int main(int argc, char** argv) {
     ConnectionCallbacks.on_connection          = &OnConnect;
     ConnectionCallbacks.on_device_found        = &OnDevice;
     ConnectionCallbacks.on_frame               = &OnFrame;
-    ConnectionCallbacks.on_image               = &OnImage;
     ConnectionCallbacks.on_point_mapping_change = &OnPointMappingChange;
     ConnectionCallbacks.on_log_message         = &OnLogMessage;
     ConnectionCallbacks.on_head_pose           = &OnHeadPose;

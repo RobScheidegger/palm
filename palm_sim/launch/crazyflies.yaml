@@ -3,3 +3,15 @@ crazyflies:
   id: 1
   initialPosition: [1.5, 1.5, 0.0]
   type: medium
+- channel: 100
+  id: 2
+  initialPosition: [0.5, 0.5, 0.0]
+  type: medium
+- channel: 100
+  id: 3
+  initialPosition: [1.5, 0.5, 0.0]
+  type: medium
+- channel: 100
+  id: 4
+  initialPosition: [0.5, 1.5, 0.0]
+  type: medium
