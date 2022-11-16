@@ -14,7 +14,7 @@ void PalmScene::handleSensorData(HandSensorData& data){
 
 ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actualState){
     ActualRobotState returnState;
-    pthread_mutex_lock(&sceneMutex);
+    
     actualRobotState = actualState;
 
     if(!hasInitialState){
@@ -24,9 +24,10 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
         num_robots = state.robots.size();
         fprintf(stderr, "[PalmScene::handleReeiveRobotState] Initialized with %d robots.\n", num_robots);
     }
-
+    pthread_mutex_lock(&sceneMutex);
     SceneRobotState deltaState = Delta(this->state, actualState, handData);
-    if(dot(deltaState, actualState) < 0.5){
+    pthread_mutex_unlock(&sceneMutex);
+    if(dot(deltaState, actualState) < 0.005){
         // No new planning, use old trajectory. 
         // Check if the front of the trajectory queue is close to the current position
         // If so, pop it off of the queue.
@@ -36,17 +37,17 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
         while(!trajectoryQueue.empty()){
             trajectoryQueue.pop();
         }
-        for(int i = 0; i < trajectory.size(); i++){
+        for(size_t i = 0; i < trajectory.size(); i++){
             trajectoryQueue.push(trajectory[i]);
         }
     }
-    if(!trajectoryQueue.empty() && dot(SceneRobotState{trajectoryQueue.front().robots}, actualRobotState) < TRAJECTORY_THRESHOLD){
+
+    if(!trajectoryQueue.empty()){
         returnState = trajectoryQueue.front();
         trajectoryQueue.pop();
     } else {
         returnState = actualState;
     }
-    pthread_mutex_unlock(&sceneMutex);
     return returnState;
 }
 

@@ -25,7 +25,6 @@ def listen(cf_positions, cf_current_positions):
         def handle_read(self):
             data = self.recv(BUFFER_SIZE)
             string_data = data.decode('utf-8')
-            print("[palm_sim] Received data: ", string_data)
 
             if string_data != "R":
                 robots = string_data.split('|')
@@ -34,7 +33,6 @@ def listen(cf_positions, cf_current_positions):
                     cf_positions[i] = position
             # Reply with current state
             response = str.join("|", cf_current_positions) + "\n"
-            print("[palm_sim] Returning response: ", response)
             self.send(response.encode('utf-8'))
                 
 

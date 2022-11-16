@@ -13,10 +13,12 @@
 #include "state/Scene.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
+#include <chrono>
 
 using namespace boost::asio;
 
-static const float UPDATE_FREQUENCY = 1.0f / 5.0f;
+static const long UPDATE_FREQUENCY_HZ = 10;
+static const long UPDATE_FREQUENCY_MS = 1000 / UPDATE_FREQUENCY_HZ;
 static PalmScene* GLOBAL_SCENE = NULL;
 
 #define handle_error_en(en, msg) \
@@ -46,7 +48,6 @@ void proxy_thread(int socket_id){
         
         //Insert the newly found sensor data into the scene.
         if(GLOBAL_SCENE){
-            fprintf(stderr, "[palm_core:sim_proxy] Updating hand data.\n");
             (*GLOBAL_SCENE).handleSensorData(*sensor_data);
         }
         
@@ -175,7 +176,7 @@ void run_communication_thread(CommunicationThreadParameters* threadParameters){
         }
 
         requestMessage = boost::algorithm::join(returnRobotStrings, "|");
-        sleep(UPDATE_FREQUENCY);
+        std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_FREQUENCY_MS));
     }
 }
 

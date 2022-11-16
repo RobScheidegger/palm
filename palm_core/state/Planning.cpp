@@ -2,6 +2,8 @@
 #include "Utilities.hpp"
 #include <stdio.h>
 
+#define NORMALIZE_CONSTANT 250.0f
+
 SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData){
     SceneRobotState newRobotState;
     // Take the last one and set the ideal positions acordingly
@@ -11,17 +13,14 @@ SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotSt
     const HandSensorData firstData = handData.back();
     
     if(!firstData.right.visible){
-        fprintf(stderr, "Right not visible");
         return state;
     }
         
     int numRobots = state.robots.size();
-    fprintf(stderr, "Computing with %d robots\n", numRobots);
     for(int i = 0; i < numRobots && i < 5; i++){
         const FingerData& finger = firstData.right.fingers[i];
-        fprintf(stderr, "Finger pos: %f, %f, %f\n", finger.position.x, finger.position.y, finger.position.z);
 
-        RobotState robot{glm::vec3(finger.position.x, finger.position.y, finger.position.z)};
+        RobotState robot{glm::vec3(finger.position.x, finger.position.y, finger.position.z) / NORMALIZE_CONSTANT};
         newRobotState.robots.push_back(robot);
     }
 
@@ -32,7 +31,7 @@ GestureAction Gesture_Default(const HandDataQueue& handData){
     return GestureAction::GESTURE_NONE;
 }
 
-#define CLOSE_THRESHOLD 0.5f
+#define CLOSE_THRESHOLD 0.1f
 #define INTERPOLATION_FACTOR 10
 std::vector<ActualRobotState> Plan_Linear(const ActualRobotState& state, const SceneRobotState& target){
     std::vector<ActualRobotState> trajectories;
