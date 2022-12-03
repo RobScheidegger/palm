@@ -2,7 +2,7 @@
 #include "Utilities.hpp"
 #include <stdio.h>
 
-#define NORMALIZE_CONSTANT 100.0f
+#define NORMALIZE_CONSTANT 50.0f
 
 SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData){
     SceneRobotState newRobotState;
@@ -23,6 +23,15 @@ SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotSt
         RobotState robot{glm::vec3(finger.position.z, finger.position.x, finger.position.y) / NORMALIZE_CONSTANT};
         newRobotState.robots.push_back(robot);
     }
+    if(numRobots > 5){
+        int n = numRobots - 5;
+        for(int i = 0; i < n && i < 5; i++){
+        const FingerData& finger = firstData.left.fingers[i];
+
+        RobotState robot{glm::vec3(finger.position.z, finger.position.x, finger.position.y) / NORMALIZE_CONSTANT};
+        newRobotState.robots.push_back(robot);
+    }
+    }
 
     return newRobotState;
 }
@@ -36,9 +45,9 @@ GestureAction Gesture_Default(const HandDataQueue& handData){
 std::vector<ActualRobotState> Plan_Linear(const ActualRobotState& state, const SceneRobotState& target){
     std::vector<ActualRobotState> trajectories;
     // If they are close enough, don't change anything.
-    if(dot(target, state) < CLOSE_THRESHOLD){
-        return trajectories;
-    }
+    //if(dot(target, state) < CLOSE_THRESHOLD){
+    //    return trajectories;
+    //}
 
     // Otherwise, lineary interpolate between the 
     // TODO

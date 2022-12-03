@@ -1,16 +1,15 @@
-"""Takeoff-hover-land for one CF. Useful to validate hardware config."""
 import sys
-#sys.path.insert(0, '/home/robert/crazyswarm/ros_ws/src/crazyswarm/scripts')
 from pycrazyswarm import Crazyswarm
 import asyncore
 from threading import Thread, Event
 from time import sleep
 import random
+import time
 
 SWARM = None
 BUFFER_SIZE = 8192
 PALM_CORE_PROXY_PORT = 8888
-UPDATE_HZ = 10.0
+UPDATE_HZ = 20.0
 UPDATE_SLEEP_TIME = 1.0 / UPDATE_HZ
 CANCEL_EVENT = Event()
 
@@ -48,7 +47,7 @@ def listen(cf_positions, cf_current_positions):
         def handle_accepted(self, sock, addr):
             print('Incoming connection from %s' % repr(addr))
             handler = PalmCoreHandler(sock)
-#
+
     proxy_server = PalmCoreSimProxyServer('localhost', PALM_CORE_PROXY_PORT)
     print("[palm_sim] Proxy server initiated, waiting for incoming connections.")
     asyncore.loop()
@@ -80,13 +79,17 @@ def main():
 
     print(f"[palm_sim] Entering update loop at {UPDATE_HZ} hz.")
     while True:
+        start = time.time()
         for position, i in zip(CF_GOAL_POSITIONS, range(len(CF_GOAL_POSITIONS))):
             cf = SWARM.allcfs.crazyflies[i]
             cf.cmdPosition(position)
             current_position = cf.position()
             CF_CURRENT_POSITIONS[i] = f"{current_position[0]},{current_position[1]},{current_position[2]}"
-
-        timeHelper.sleep(UPDATE_SLEEP_TIME)
+        end = time.time()
+        compute_time = end - start 
+        #print("Compute time: ", compute_time)
+        #print("Goal positions: ", CF_GOAL_POSITIONS)
+        timeHelper.sleep(UPDATE_SLEEP_TIME - compute_time / 1000) 
     
 
 if __name__ == "__main__":
