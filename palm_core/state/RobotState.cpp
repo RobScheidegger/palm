@@ -32,3 +32,36 @@ std::string ActualRobotState::toString(){
     }
     return acc;
 }
+
+ActualRobotState toActualRobotState(const SceneRobotState& state){
+    return ActualRobotState{state.robots};
+}
+SceneRobotState toSceneRobotState(const ActualRobotState& state){
+    return SceneRobotState{state.robots};
+}
+
+ActualRobotState difference(const SceneRobotState& state1, const ActualRobotState& state2){
+    assert(state1.robots.size() == state2.robots.size());
+    std::vector<RobotState> robots;
+    for(int i = 0; i < state1.robots.size(); i++){
+        robots.push_back(RobotState{state1.robots[i].position - state2.robots[i].position});
+    }
+    return ActualRobotState{robots};
+}
+
+ActualRobotState scale(const ActualRobotState& state, const float f){
+    std::vector<RobotState> robots;
+    for(int i = 0; i < state.robots.size(); i++){
+        robots.push_back(RobotState{state.robots[i].position * f});
+    }
+    return ActualRobotState{robots};
+}
+
+ActualRobotState add(const ActualRobotState& state1, const ActualRobotState& state2){
+    assert(state1.robots.size() == state2.robots.size());
+    std::vector<RobotState> robots;
+    for(int i = 0; i < state1.robots.size(); i++){
+        robots.push_back(RobotState{state1.robots[i].position + state2.robots[i].position});
+    }
+    return ActualRobotState{robots};
+}

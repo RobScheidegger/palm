@@ -17,7 +17,7 @@
 
 using namespace boost::asio;
 
-static const long UPDATE_FREQUENCY_HZ = 20;
+static const long UPDATE_FREQUENCY_HZ = 17;
 static const long UPDATE_FREQUENCY_MS = 1000 / UPDATE_FREQUENCY_HZ;
 static PalmScene* GLOBAL_SCENE = NULL;
 
@@ -174,7 +174,7 @@ void run_communication_thread(CommunicationThreadParameters* threadParameters){
                 + std::to_string(robotState.position.y) + "," 
                 + std::to_string(robotState.position.z));
         }
-
+        printf("Message received\n");
         requestMessage = boost::algorithm::join(returnRobotStrings, "|");
         std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_FREQUENCY_MS));
     }
@@ -203,6 +203,7 @@ int main(int argc, char** argv) {
     // Initialize scene
 
     PalmSceneConfiguration config{};
+    config.plannerType = PlannerType::LINEAR;
     if(argsToConfiguration(argc, argv, config)){
         return -1;
     }

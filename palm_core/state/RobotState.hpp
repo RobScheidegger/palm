@@ -41,3 +41,10 @@ struct ActualRobotState {
 };
 
 float dot(const SceneRobotState& state, const ActualRobotState& actualPositions);
+
+ActualRobotState toActualRobotState(const SceneRobotState& state);
+SceneRobotState toSceneRobotState(const ActualRobotState& state);
+
+ActualRobotState difference(const SceneRobotState& state1, const ActualRobotState& state2);
+ActualRobotState scale(const ActualRobotState& state, const float f);
+ActualRobotState add(const ActualRobotState& state1, const ActualRobotState& state2);

@@ -9,7 +9,7 @@ import time
 SWARM = None
 BUFFER_SIZE = 8192
 PALM_CORE_PROXY_PORT = 8888
-UPDATE_HZ = 20.0
+UPDATE_HZ = 15.0
 UPDATE_SLEEP_TIME = 1.0 / UPDATE_HZ
 CANCEL_EVENT = Event()
 
@@ -87,8 +87,7 @@ def main():
             CF_CURRENT_POSITIONS[i] = f"{current_position[0]},{current_position[1]},{current_position[2]}"
         end = time.time()
         compute_time = end - start 
-        #print("Compute time: ", compute_time)
-        #print("Goal positions: ", CF_GOAL_POSITIONS)
+        #print("Current positions: ", CF_CURRENT_POSITIONS)
         timeHelper.sleep(UPDATE_SLEEP_TIME - compute_time / 1000) 
     
 
