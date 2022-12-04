@@ -6,7 +6,9 @@
 #include <string>
 
 enum PlannerType {
-    LINEAR // Default
+    LINEAR, // Default
+	POTENTIAL,
+	RRT
 };
 
 enum GestureType {

@@ -16,7 +16,6 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
     ActualRobotState returnState;
     
     actualRobotState = actualState;
-    printf("Actual state: %s\n", actualRobotState.toString().c_str());
 
     if(!hasInitialState){
         // Initial state has not been setup.
@@ -45,6 +44,7 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
         for(size_t i = 0; i < trajectory.size(); i++){
             trajectoryQueue.push(trajectory[i]);
         }
+        printf("Set %d trajectories\n", trajectoryQueue.size());
     }
 
     if(!trajectoryQueue.empty()){
@@ -79,5 +79,7 @@ std::vector<ActualRobotState> PalmScene::Plan(const ActualRobotState& state, con
     switch(configuration.plannerType){
         case PlannerType::LINEAR:
             return Plan_Linear(state, target);
+        case PlannerType::POTENTIAL:
+            return Plan_Potential(state, target);
     }
 }

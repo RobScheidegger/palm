@@ -8,3 +8,4 @@ SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotSt
 GestureAction Gesture_Default(const HandDataQueue& handData);
 
 std::vector<ActualRobotState> Plan_Linear(const ActualRobotState& state, const SceneRobotState& target);
+std::vector<ActualRobotState> Plan_Potential(const ActualRobotState& state, const SceneRobotState& target);
