@@ -61,7 +61,7 @@ std::vector<ActualRobotState> Plan_Linear(const ActualRobotState& state, const S
     return trajectories;
 }
 
-#define ROBOT_RADIUS 0.3
+#define ROBOT_RADIUS 0.1
 float Potential_Goal(const ActualRobotState& state, const SceneRobotState& target){
     return 1.0f / dot(target, state);
 }
@@ -87,13 +87,13 @@ float Potential_Robots(const ActualRobotState& state){
 }
 
 #define MU_G 1000.0f
-#define MU_R 1.0f
+#define MU_R 0//1.0f
 #define MU_O 1.0f
 float Potential(const ActualRobotState& state, const SceneRobotState& target){
     return MU_R * Potential_Robots(state) - MU_G * Potential_Goal(state, target); 
 }
 
-#define TRAJECTORY_MAX 10
+#define TRAJECTORY_MAX 20
 #define TRAJECTORY_DEVIATION 0.25
 #define POTENTIAL_SAMPLES 1000
 std::vector<ActualRobotState> Plan_Potential(const ActualRobotState& state, const SceneRobotState& target){
@@ -126,6 +126,63 @@ std::vector<ActualRobotState> Plan_Potential(const ActualRobotState& state, cons
         trajectories.push_back(choice);
         currentState = choice;
         printf("Adding Potential Target: %s, potential: %f\n", choice.toString().c_str(), bestPotential);
+    }
+
+    return trajectories;
+}
+
+ActualRobotState Potential_Goal_Gradient(const ActualRobotState& state, const SceneRobotState& target){
+    float V_G = Potential_Goal(state, target);
+    return scale(difference(target, state), -V_G * V_G * 2);
+}
+
+
+glm::vec3 Potential_Robot_Gradient(const RobotState& robotState1, const RobotState& robotState2){
+    float V_R = Potential_Robot(robotState1, robotState2);
+
+    float d = glm::length(robotState1.position - robotState2.position);
+    return -1.0f * V_R * V_R / d  * (robotState1.position - robotState2.position);
+}
+
+ActualRobotState Potential_Robots_Gradient(const ActualRobotState& state){
+    ActualRobotState V{state.robots};
+    // Compute for each pair of robots
+    for(int i = 0; i < state.robots.size(); i++){
+        glm::vec3 grad{0,0,0};
+        for(int j = 0; j < state.robots.size(); j++){
+            if(i == j)
+                continue;
+            grad += Potential_Robot_Gradient(state.robots[i], state.robots[j]);
+        }
+        V.robots[i].position = grad;
+    }
+    return V;
+}
+
+
+#define ALPHA 0.01
+#define MU_G_GRADIENT 3
+#define MU_R_GRADIENT 0.1
+ActualRobotState Potential_Gradient(const ActualRobotState& state, const SceneRobotState& target){
+    return add(scale(Potential_Goal_Gradient(state, target), -MU_G_GRADIENT * ALPHA), 
+               scale(Potential_Robots_Gradient(state), MU_R_GRADIENT * ALPHA));
+}
+
+#define TRAJECTORY_MAX_POTENTIAL_GRADIENT 20
+std::vector<ActualRobotState> Plan_Potential_Gradient(const ActualRobotState& state, const SceneRobotState& target){
+    std::vector<ActualRobotState> trajectories;
+    ActualRobotState currentState = state;
+    int i = 0;
+    printf("Gradient state: %s, target: %s\n", state.toString().c_str(), target.toString().c_str());
+
+    // Use the same potential function as the sampling method, but we move along a gradient to the next point (gradient descent)
+    while((trajectories.size() < TRAJECTORY_MAX_POTENTIAL_GRADIENT) && dot(target, currentState) >= 0.5){
+        i++;
+        currentState = add(currentState, Potential_Gradient(currentState, target));
+        if(i % 1 == 0){
+            trajectories.push_back(currentState);
+            printf("Adding Potential Target: %s, potential: %f\n", currentState.toString().c_str(), Potential(currentState, target));
+        }
     }
 
     return trajectories;

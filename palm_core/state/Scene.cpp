@@ -50,9 +50,10 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
     if(!trajectoryQueue.empty()){
         returnState = trajectoryQueue.front();
         // If the current actual state is close enough to the trajectory state, pop it.
-        if(dot(toSceneRobotState(actualState), returnState) < TRAJECTORY_THRESHOLD){
+        while(dot(toSceneRobotState(actualState), returnState) < TRAJECTORY_THRESHOLD && !trajectoryQueue.empty()){
+            returnState = trajectoryQueue.front();
             trajectoryQueue.pop();
-            printf("Target state close enough to goal state. Queue size: %d\n", trajectoryQueue.size());
+            //printf("Target state close enough to goal state. Queue size: %d\n", trajectoryQueue.size());
         }
     } else {
         returnState = actualState;
@@ -81,5 +82,7 @@ std::vector<ActualRobotState> PalmScene::Plan(const ActualRobotState& state, con
             return Plan_Linear(state, target);
         case PlannerType::POTENTIAL:
             return Plan_Potential(state, target);
+        case PlannerType::POTENTIAL_GRADIENT:
+            return Plan_Potential_Gradient(state, target);
     }
 }

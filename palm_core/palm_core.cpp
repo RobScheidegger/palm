@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
     // Initialize scene
 
     PalmSceneConfiguration config{};
-    config.plannerType = PlannerType::POTENTIAL;
+    config.plannerType = PlannerType::POTENTIAL_GRADIENT;
     if(argsToConfiguration(argc, argv, config)){
         return -1;
     }

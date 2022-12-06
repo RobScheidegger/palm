@@ -11,11 +11,11 @@ float dot(const SceneRobotState& state, const ActualRobotState& actualPositions)
     return f;
 }
 
-std::string RobotState::toString(){
+std::string RobotState::toString() const{
     return std::to_string(position.x) + "," + std::to_string(position.y) + "," + std::to_string(position.z);
 }
 
-std::string SceneRobotState::toString(){
+std::string SceneRobotState::toString() const{
     std::string acc;
     for(size_t i = 0; i < robots.size(); i++)
     {
@@ -24,7 +24,7 @@ std::string SceneRobotState::toString(){
     return acc;
 }
 
-std::string ActualRobotState::toString(){
+std::string ActualRobotState::toString() const{
     std::string acc;
     for(size_t i = 0; i < robots.size(); i++)
     {

@@ -8,6 +8,7 @@
 enum PlannerType {
     LINEAR, // Default
 	POTENTIAL,
+	POTENTIAL_GRADIENT,
 	RRT
 };
 
@@ -29,17 +30,17 @@ enum GestureAction {
 
 struct RobotState {
 	glm::vec3 position{0,0,0};
-	std::string toString();
+	std::string toString() const;
 };
 
 struct SceneRobotState {
 	std::vector<RobotState> robots = std::vector<RobotState>{};
-	std::string toString();
+	std::string toString() const;
 };
 
 struct ActualRobotState {
 	std::vector<RobotState> robots = std::vector<RobotState>{};
-	std::string toString();
+	std::string toString() const;
 };
 
 float dot(const SceneRobotState& state, const ActualRobotState& actualPositions);
