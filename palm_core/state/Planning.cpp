@@ -61,7 +61,7 @@ std::vector<ActualRobotState> Plan_Linear(const ActualRobotState& state, const S
     return trajectories;
 }
 
-#define ROBOT_RADIUS 0.1
+#define ROBOT_RADIUS 0.3
 float Potential_Goal(const ActualRobotState& state, const SceneRobotState& target){
     return 1.0f / dot(target, state);
 }
@@ -83,24 +83,25 @@ float Potential_Robots(const ActualRobotState& state){
             V += Potential_Robot(state.robots[i], state.robots[j]);
         }
     }
+    return V;
 }
 
-#define MU_G 10000.0f
+#define MU_G 1000.0f
 #define MU_R 1.0f
 #define MU_O 1.0f
 float Potential(const ActualRobotState& state, const SceneRobotState& target){
     return MU_R * Potential_Robots(state) - MU_G * Potential_Goal(state, target); 
 }
 
-
 #define TRAJECTORY_MAX 10
-#define POTENTIAL_SAMPLES 5000
+#define TRAJECTORY_DEVIATION 0.25
+#define POTENTIAL_SAMPLES 1000
 std::vector<ActualRobotState> Plan_Potential(const ActualRobotState& state, const SceneRobotState& target){
     std::vector<ActualRobotState> trajectories;
     ActualRobotState currentState = state;
     std::random_device rd{};
     std::mt19937 gen{rd()};
-    std::normal_distribution<> d{0,0.1};
+    std::normal_distribution<> d{0,TRAJECTORY_DEVIATION};
 
     while(dot(target, currentState) > CLOSE_THRESHOLD && trajectories.size() < TRAJECTORY_MAX){
         // Gist: Explore outwards from the current state, sampling different potential functions at that point, and pick the best one
@@ -123,6 +124,7 @@ std::vector<ActualRobotState> Plan_Potential(const ActualRobotState& state, cons
             }
         }
         trajectories.push_back(choice);
+        currentState = choice;
         printf("Adding Potential Target: %s, potential: %f\n", choice.toString().c_str(), bestPotential);
     }
 
