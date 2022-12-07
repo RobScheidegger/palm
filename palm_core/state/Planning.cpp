@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <random>
 #include <limits>
+#include <tuple>
 #define NORMALIZE_CONSTANT 50.0f
 
 const static float INF = std::numeric_limits<float>::infinity();
@@ -186,4 +187,86 @@ std::vector<ActualRobotState> Plan_Potential_Gradient(const ActualRobotState& st
     }
 
     return trajectories;
+}
+
+#define GESTURE_SCALE 1.0f
+SceneRobotState Delta_Gesture(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData){
+    float d = dot(state, actualState);
+    // If far away, avoid since we assume some movement is going on
+    //if(d > CLOSE_THRESHOLD)
+    //    return state;
+
+    SceneRobotState newState = state;
+    glm::vec3 gesture = Gesture_Linear(handData);
+    for(int i = 0; i < state.robots.size(); i++){
+        newState.robots[i].position += GESTURE_SCALE * gesture;
+    }
+    if(glm::length(gesture) != 0)
+        printf("Old: %s, New: %s\n", state.toString().c_str(), newState.toString().c_str());
+    return newState;
+}
+
+struct RegressionResult{
+    float b;
+    float m;
+    float r;
+};
+
+RegressionResult temporalRegression(std::vector<float> values){
+    float n = values.size();
+    float sx = n * (n - 1) / 2;
+
+    float sy = 0;
+    float sxx = 0;
+    float sxy = 0;
+    for(int i = 0; i < n; i++){
+        sy += values[i];
+        sxx += std::pow(float(i), 2);
+        sxy += values[i] * (float)i;
+    }
+    float b = (sy * sxx - sx * sxy) / (n * sxx - sx * sx);
+    float m = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+    float sres = 0;
+    float stot = 0;
+    float ymean = sy / n;
+    for(int i = 0; i < n; i++){
+        sres += std::pow(values[i] - (b + m * (float)i), 2);
+        stot += std::pow(values[i] - ymean, 2);
+    }
+    float r = 1.0f - sres / stot;
+    return {b, m, r};
+}
+
+#define R_THRESHOLD 0.9
+#define PAST_QUEUE_WINDOW 10
+glm::vec3 Gesture_Linear(const HandDataQueue& handData){
+    // Perform regression on each of the points of handData to get the x values;
+    std::vector<float> xValues;
+    std::vector<float> yValues;
+    std::vector<float> zValues;
+
+    HandDataQueue queue = handData;
+
+    while(!queue.empty() && xValues.size() <= PAST_QUEUE_WINDOW){
+        HandSensorData& hand = queue.front();
+        queue.pop();
+        xValues.push_back(hand.right.position.x);
+        yValues.push_back(hand.right.position.y);
+        zValues.push_back(hand.right.position.z);
+    }
+
+    int n = xValues.size();
+    if(n < PAST_QUEUE_WINDOW)
+        return glm::vec3{0,0,0};
+    RegressionResult rx = temporalRegression(xValues);
+    RegressionResult ry = temporalRegression(yValues);
+    RegressionResult rz = temporalRegression(zValues);
+
+    float ravg = (rx.r + ry.r + rz.r) / 3;
+    printf("Linear regression with confidence: {%f, %f, %f}, avg: %f\n", rx.r, ry.r, rz.r, ravg);
+    
+    if(ravg > R_THRESHOLD){
+        return glm::normalize(glm::vec3{rx.m, ry.m, rz.m});
+    }
+    return glm::vec3{0,0,0};
 }

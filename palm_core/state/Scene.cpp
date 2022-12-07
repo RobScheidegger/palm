@@ -66,6 +66,8 @@ SceneRobotState PalmScene::Delta(const SceneRobotState& state, const ActualRobot
     switch(configuration.deltaType){
         case DeltaType::IDENTITY:
             return Delta_Identity(state, actualState, handData);
+        case DeltaType::GESTURE:
+            return Delta_Gesture(state, actualState, handData);
     }
 }
 

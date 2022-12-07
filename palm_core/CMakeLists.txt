@@ -59,7 +59,7 @@ if(UNIX)
 	#SET(Boost_INCLUDE_DIR "/usr/include/boost/")
 	#include_directories(${Boost_INCLUDE_DIRS})
 	#link_directories(/usr/local/lib/)
-
+	
 	add_executable(
 		palm_core
 		"state/Utilities.hpp"
@@ -70,6 +70,9 @@ if(UNIX)
 		"state/Scene.hpp" "state/Scene.cpp"
 		"palm_core.cpp" 
 		)
+
+	set_property(TARGET palm_core PROPERTY CXX_STANDARD 17)
+
 
 	target_link_libraries(palm_core PRIVATE Threads::Threads)
 
