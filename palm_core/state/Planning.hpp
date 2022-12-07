@@ -4,7 +4,7 @@
 #include "Utilities.hpp"
 
 SceneRobotState Delta_Identity(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData);
-SceneRobotState Delta_Gesture(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData);
+SceneRobotState Delta_Gesture(const SceneRobotState& state, const ActualRobotState& actualState, HandDataQueue& handData);
 
 GestureAction Gesture_Default(const HandDataQueue& handData);
 glm::vec3 Gesture_Linear(const HandDataQueue& handData);
