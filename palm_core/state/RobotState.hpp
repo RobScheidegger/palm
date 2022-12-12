@@ -17,7 +17,8 @@ enum GestureType {
 };
 
 enum DeltaType {
-    IDENTITY // Default
+    IDENTITY, // Default
+	GESTURE
 };
 
 enum GestureAction {

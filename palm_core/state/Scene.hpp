@@ -36,7 +36,7 @@ private:
 	bool hasInitialState = false;
 	int num_robots;
 	
-	SceneRobotState Delta(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData);
+	SceneRobotState Delta(const SceneRobotState& state, const ActualRobotState& actualState, HandDataQueue& handData);
 	GestureAction Gesture(const HandDataQueue& handData);
 	std::vector<ActualRobotState> Plan(const ActualRobotState& state, const SceneRobotState& target);
 public:

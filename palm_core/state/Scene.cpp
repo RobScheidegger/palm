@@ -51,21 +51,26 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
         returnState = trajectoryQueue.front();
         // If the current actual state is close enough to the trajectory state, pop it.
         while(dot(toSceneRobotState(actualState), returnState) < TRAJECTORY_THRESHOLD && !trajectoryQueue.empty()){
-            returnState = trajectoryQueue.front();
             trajectoryQueue.pop();
-            //printf("Target state close enough to goal state. Queue size: %d\n", trajectoryQueue.size());
+            if(!trajectoryQueue.empty())
+                returnState = trajectoryQueue.front();
+            printf("Target state close enough to goal state. Queue size: %d\n Target: %s\n Actual: %s\n", 
+                trajectoryQueue.size(), deltaState.toString().c_str(), actualState.toString().c_str());
         }
-    } else {
+    } 
+    if(trajectoryQueue.empty()){
         returnState = actualState;
     }
     pthread_mutex_unlock(&sceneMutex);
     return returnState;
 }
 
-SceneRobotState PalmScene::Delta(const SceneRobotState& state, const ActualRobotState& actualState, const HandDataQueue& handData){
+SceneRobotState PalmScene::Delta(const SceneRobotState& state, const ActualRobotState& actualState, HandDataQueue& handData){
     switch(configuration.deltaType){
         case DeltaType::IDENTITY:
             return Delta_Identity(state, actualState, handData);
+        case DeltaType::GESTURE:
+            return Delta_Gesture(state, actualState, handData);
     }
 }
 
