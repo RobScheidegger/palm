@@ -48,16 +48,17 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
     }
 
     if(!trajectoryQueue.empty()){
-        returnState = trajectoryQueue.front();
+        returnState = ActualRobotState{trajectoryQueue.front().robots};
         // If the current actual state is close enough to the trajectory state, pop it.
-        float distance = dot(toSceneRobotState(actualState), returnState);
+        float distance = dot(SceneRobotState{actualState.robots}, returnState);
         while(distance < TRAJECTORY_THRESHOLD && !trajectoryQueue.empty()){
-            printf("Target state close enough to goal state. Queue size: %d\n Target: %s\n Actual: %s, Return: %s, Distance: %f\n", 
-                trajectoryQueue.size(), deltaState.toString().c_str(), actualState.toString().c_str(), returnState.toString().c_str(), distance);
+            //printf("Target state close enough to goal state. Queue size: %d\n Target: %s\n Actual: %s, Return: %s, Distance: %f\n", 
+            //    trajectoryQueue.size(), deltaState.toString().c_str(), actualState.toString().c_str(), returnState.toString().c_str(), distance);
             trajectoryQueue.pop();
             if(!trajectoryQueue.empty())
-                returnState = trajectoryQueue.front();
-            
+                returnState = ActualRobotState{trajectoryQueue.front().robots};
+
+            distance = dot(SceneRobotState{actualState.robots}, returnState);
         }
     } 
     if(trajectoryQueue.empty()){
@@ -91,5 +92,7 @@ std::vector<ActualRobotState> PalmScene::Plan(const ActualRobotState& state, con
             return Plan_Potential(state, target);
         case PlannerType::POTENTIAL_GRADIENT:
             return Plan_Potential_Gradient(state, target);
+        case PlannerType::RRT:
+            return Plan_Linear(state, target);
     }
 }

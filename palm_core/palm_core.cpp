@@ -201,8 +201,8 @@ int main(int argc, char** argv) {
 
     // Initialize scene
     PalmSceneConfiguration config{};
-    config.plannerType = PlannerType::POTENTIAL_GRADIENT;
-    config.deltaType = DeltaType::IDENTITY;
+    config.plannerType = PlannerType::LINEAR;
+    config.deltaType = DeltaType::GESTURE;
     if(argsToConfiguration(argc, argv, config)){
         return -1;
     }

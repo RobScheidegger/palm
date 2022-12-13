@@ -4,6 +4,7 @@
 #include <random>
 #include <limits>
 #include <map>
+#include <unordered_map>
 #include <tuple>
 #define NORMALIZE_CONSTANT 50.0f
 
@@ -63,7 +64,7 @@ std::vector<ActualRobotState> Plan_Linear(const ActualRobotState& state, const S
     return trajectories;
 }
 
-#define ROBOT_RADIUS 0.1
+#define ROBOT_RADIUS 0.2
 float Potential_Goal(const ActualRobotState& state, const SceneRobotState& target){
     return 1.0f / dot(target, state);
 }
@@ -89,15 +90,15 @@ float Potential_Robots(const ActualRobotState& state){
 }
 
 #define MU_G 1000.0f
-#define MU_R 0//1.0f
+#define MU_R 1.0f
 #define MU_O 1.0f
 float Potential(const ActualRobotState& state, const SceneRobotState& target){
     return MU_R * Potential_Robots(state) - MU_G * Potential_Goal(state, target); 
 }
 
 #define TRAJECTORY_MAX 20
-#define TRAJECTORY_DEVIATION 0.25
-#define POTENTIAL_SAMPLES 1000
+#define TRAJECTORY_DEVIATION 0.20
+#define POTENTIAL_SAMPLES 2000
 std::vector<ActualRobotState> Plan_Potential(const ActualRobotState& state, const SceneRobotState& target){
     std::vector<ActualRobotState> trajectories;
     ActualRobotState currentState = state;
@@ -191,95 +192,83 @@ std::vector<ActualRobotState> Plan_Potential_Gradient(const ActualRobotState& st
     return trajectories;
 }
 
-std::vector<SceneRobotState> Random_State() {
+#define SCENE_SIZE 10.0f
+ActualRobotState Random_State() {
     std::random_device rd{};
     std::mt19937 gen{rd()};
     std::uniform_real_distribution<> d{0,1};
 
-    std::vector<SceneRobotState> p;
-    for(int i = 0; i < 10; i++){
-        SceneRobotState state;
-        for(int j = 0; j < 3; j++){
-            RobotState robotState;
-            robotState.position = glm::vec3{d(gen), d(gen), d(gen)};
-            state.robots.push_back(robotState);
-        }
-        p.push_back(state);
+    ActualRobotState sampleState{};
+    for(int j = 0; j < sampleState.robots.size(); j++){
+        // Add arbitary noise to the position of each robot
+        glm::vec3 position = SCENE_SIZE * glm::vec3{d(gen), d(gen), d(gen)};
+        sampleState.robots.push_back(RobotState{position});
     }
-    return p;
+    return sampleState;
 }
 
+long hash(ActualRobotState state){
+    return (long)&state;
+}
 
 #define GOAL_PROBABILITY 0.1
 #define RAD 10
 std::vector<ActualRobotState> RRT_Star(const ActualRobotState& state, const SceneRobotState& target){
     std::vector<ActualRobotState> trajectories;
-    std::random_device rd{};
-    std::mt19937 gen{rd()};
-    std::uniform_real_distribution<> d{0,1};
 
-    std::vector<ActualRobotState> x_rand;
     std::vector<ActualRobotState> x_near;
     std::vector<ActualRobotState> x_new;
 
-    std::map<std::vector<ActualRobotState>, float> cost;
+    std::unordered_map<long, float> cost;
 
-/*
     for(int idx = 0; idx < 10; idx++){
 
-    // Set random positions to x_rand
-    for(int i = 0; i < 10; i++){
-        ActualRobotState state;
-        for(int j = 0; j < ; j++){
-            RobotState robotState;
-            robotState.position = glm::vec3{d(gen), d(gen), d(gen)};
-            state.robots.push_back(robotState);
+        // Set random positions to x_rand
+        ActualRobotState x_rand = Random_State();
+
+        // Set x_near to the nearest point in trajectories from x_rand
+        ActualRobotState x_near;
+        int smallest_distance = INF;
+        for(int j = 0; j < trajectories.size(); j++){
+            ActualRobotState vertex = trajectories[j];
+            // find distance between vertex and x_rand
+            float distance = dot(toSceneRobotState(vertex), x_rand);
+            if (distance < smallest_distance){
+                smallest_distance = distance;
+                x_near = vertex;
+            }
         }
-        x_rand.push_back(state);
-    }
 
-    // Set x_near to the nearest point in trajectories from x_rand
-    ActualRobotState x_near;
-    int smallest_distance = INF;
-    for(int j = 0; j < trajectories.size(); j++){
-        ActualRobotState vertex = trajectories[j];
-        // find distance between vertex and x_rand
-        float distance = dot(vertex, x_rand);
-        if (distance < smallest_distance){
-            smallest_distance = distance;
-            x_near = vertex;
-        }
-    }
+        cost.insert(std::make_pair(hash(x_rand), smallest_distance));
 
-    cost.insert({ x_rand, smallest_distance });
-
-    for(int j = 0; j < trajectories.size(); j++){
         std::vector<ActualRobotState> neighbors; 
-        ActualRobotState vertex = trajectories[j];
-        // find distance between vertex and x_rand
-        int distance = distance_func(vertex, x_rand);
-        if (distance < RAD)
-            neighbors.push_back(vertex);
-        if (distance < smallest_distance){
-            smallest_distance = distance;
-            x_near = vertex;
+        for(int j = 0; j < trajectories.size(); j++){
+            
+            ActualRobotState vertex = trajectories[j];
+            // find distance between vertex and x_rand
+            float distance = dot(toSceneRobotState(vertex), x_rand);
+            if (distance < RAD)
+                neighbors.push_back(vertex);
+            if (distance < smallest_distance){
+                smallest_distance = distance;
+                x_near = vertex;
+            }
         }
-    }
 
-    for(int i = 0; i < neighbors.size(); i++){
-        std::vector<ActualRobotState> neighbor = neighbors[i];
-        float cost_new = cost.find(x_rand);
-        float cost_neighbor = cost.find(neighbor);
-        if (cost_new->second + dot(x_rand, neighbor) < cost_neighbor->second){
-            cost.find(neighbor)->second = cost_new + dot(x_rand, neighbor);
-            trajectories.push_back({x_rand, neighbor});
+        for(int i = 0; i < neighbors.size(); i++){
+            ActualRobotState neighbor = neighbors[i];
+            float cost_new = cost[hash(x_rand)];
+            float cost_neighbor = cost[hash(neighbor)];
+            float c = dot(toSceneRobotState(x_rand), neighbor);
+            if (cost_new + c < cost_neighbor){
+                cost.find(hash(neighbor))->second = cost_new + c;
+                trajectories.push_back(neighbor);
+            }
         }
-    }
 
-    trajectories.push_back({x_rand, x_near});
+        trajectories.push_back(x_near);
 
     }
-*/
     return trajectories;  
 
 }
@@ -356,10 +345,10 @@ glm::vec3 Gesture_Linear(HandDataQueue& handData){
 SceneRobotState Delta_Gesture(const SceneRobotState& state, const ActualRobotState& actualState, HandDataQueue& handData){
     float d = dot(state, actualState);
     // If far away, avoid since we assume some movement is going on
-    if(d > CLOSE_THRESHOLD)
-        return state;
+    //if(d > CLOSE_THRESHOLD)
+    //    return state;
 
-    SceneRobotState newState = state;
+    SceneRobotState newState{state.robots};
     glm::vec3 gesture = Gesture_Linear(handData);
     for(int i = 0; i < state.robots.size(); i++){
         newState.robots[i].position += GESTURE_SCALE * gesture;
