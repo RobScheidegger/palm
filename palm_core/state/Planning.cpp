@@ -165,8 +165,9 @@ ActualRobotState Potential_Robots_Gradient(const ActualRobotState& state){
 #define MU_G_GRADIENT 3
 #define MU_R_GRADIENT 0.1
 ActualRobotState Potential_Gradient(const ActualRobotState& state, const SceneRobotState& target){
-    return add(scale(Potential_Goal_Gradient(state, target), -MU_G_GRADIENT * ALPHA), 
-               scale(Potential_Robots_Gradient(state), MU_R_GRADIENT * ALPHA));
+    return scale(Potential_Goal_Gradient(state, target), -MU_G_GRADIENT * ALPHA);
+    //return add(scale(Potential_Goal_Gradient(state, target), -MU_G_GRADIENT * ALPHA), 
+    //           scale(Potential_Robots_Gradient(state), MU_R_GRADIENT * ALPHA));
 }
 
 #define TRAJECTORY_MAX_POTENTIAL_GRADIENT 20
@@ -247,7 +248,7 @@ glm::vec3 Gesture_Linear(HandDataQueue& handData){
 
     float ravg = (rx.r + ry.r + rz.r) / 3;
     float magnitude = glm::length(glm::vec3{rx.m, ry.m, rz.m});
-    printf("Linear regression with confidence: {%f, %f, %f}, avg: %f, mag: %f\n", rx.r, ry.r, rz.r, ravg, magnitude);
+    //printf("Linear regression with confidence: {%f, %f, %f}, avg: %f, mag: %f\n", rx.r, ry.r, rz.r, ravg, magnitude);
     if(ravg > R_THRESHOLD && magnitude >= DISTANCE_THRESHOLD){
         for(int i = 0; i < PAST_QUEUE_WINDOW && !handData.empty(); i++){
             handData.pop();
@@ -269,7 +270,7 @@ SceneRobotState Delta_Gesture(const SceneRobotState& state, const ActualRobotSta
     for(int i = 0; i < state.robots.size(); i++){
         newState.robots[i].position += GESTURE_SCALE * gesture;
     }
-    if(glm::length(gesture) != 0)
-        printf("Old: %s, New: %s\n", state.toString().c_str(), newState.toString().c_str());
+    //if(glm::length(gesture) != 0)
+    //    printf("Old: %s, New: %s\n", state.toString().c_str(), newState.toString().c_str());
     return newState;
 }
