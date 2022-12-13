@@ -17,7 +17,7 @@
 
 using namespace boost::asio;
 
-static const long UPDATE_FREQUENCY_HZ = 17;
+static const long UPDATE_FREQUENCY_HZ = 10;
 static const long UPDATE_FREQUENCY_MS = 1000 / UPDATE_FREQUENCY_HZ;
 static PalmScene* GLOBAL_SCENE = NULL;
 

@@ -3,11 +3,8 @@
 #include <stdio.h>
 #include <random>
 #include <limits>
-<<<<<<< HEAD
 #include <map>
-=======
 #include <tuple>
->>>>>>> 07698f9b55ff5b3753a9b65b4489396cecff60d4
 #define NORMALIZE_CONSTANT 50.0f
 
 const static float INF = std::numeric_limits<float>::infinity();
@@ -165,7 +162,7 @@ ActualRobotState Potential_Robots_Gradient(const ActualRobotState& state){
 }
 
 
-#define ALPHA 0.01
+#define ALPHA 1
 #define MU_G_GRADIENT 3
 #define MU_R_GRADIENT 0.1
 ActualRobotState Potential_Gradient(const ActualRobotState& state, const SceneRobotState& target){
@@ -174,7 +171,7 @@ ActualRobotState Potential_Gradient(const ActualRobotState& state, const SceneRo
     //           scale(Potential_Robots_Gradient(state), MU_R_GRADIENT * ALPHA));
 }
 
-#define TRAJECTORY_MAX_POTENTIAL_GRADIENT 20
+#define TRAJECTORY_MAX_POTENTIAL_GRADIENT 500
 std::vector<ActualRobotState> Plan_Potential_Gradient(const ActualRobotState& state, const SceneRobotState& target){
     std::vector<ActualRobotState> trajectories;
     ActualRobotState currentState = state;
@@ -185,9 +182,9 @@ std::vector<ActualRobotState> Plan_Potential_Gradient(const ActualRobotState& st
     while((trajectories.size() < TRAJECTORY_MAX_POTENTIAL_GRADIENT) && dot(target, currentState) >= 0.5){
         i++;
         currentState = add(currentState, Potential_Gradient(currentState, target));
-        if(i % 1 == 0){
+        if(i % 25 == 0){
             trajectories.push_back(currentState);
-            printf("Adding Potential Target: %s, potential: %f\n", currentState.toString().c_str(), Potential(currentState, target));
+            //printf("Adding Potential Target: %s, potential: %f\n", currentState.toString().c_str(), Potential(currentState, target));
         }
     }
 
@@ -227,12 +224,13 @@ std::vector<ActualRobotState> RRT_Star(const ActualRobotState& state, const Scen
 
     std::map<std::vector<ActualRobotState>, float> cost;
 
+/*
     for(int idx = 0; idx < 10; idx++){
 
     // Set random positions to x_rand
     for(int i = 0; i < 10; i++){
         ActualRobotState state;
-        for(int j = 0; j < 3; j++){
+        for(int j = 0; j < ; j++){
             RobotState robotState;
             robotState.position = glm::vec3{d(gen), d(gen), d(gen)};
             state.robots.push_back(robotState);
@@ -281,7 +279,7 @@ std::vector<ActualRobotState> RRT_Star(const ActualRobotState& state, const Scen
     trajectories.push_back({x_rand, x_near});
 
     }
-
+*/
     return trajectories;  
 
 }

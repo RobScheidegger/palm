@@ -9,7 +9,7 @@ void PalmScene::handleSensorData(HandSensorData& data){
     pthread_mutex_unlock(&sceneMutex);
 }
 
-#define TRAJECTORY_THRESHOLD 0.5
+#define TRAJECTORY_THRESHOLD 0.1
 #define PLAN_THRESHOLD 2.5
 
 ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actualState){
@@ -50,12 +50,14 @@ ActualRobotState PalmScene::handleReceiveRobotState(const ActualRobotState& actu
     if(!trajectoryQueue.empty()){
         returnState = trajectoryQueue.front();
         // If the current actual state is close enough to the trajectory state, pop it.
-        while(dot(toSceneRobotState(actualState), returnState) < TRAJECTORY_THRESHOLD && !trajectoryQueue.empty()){
+        float distance = dot(toSceneRobotState(actualState), returnState);
+        while(distance < TRAJECTORY_THRESHOLD && !trajectoryQueue.empty()){
+            printf("Target state close enough to goal state. Queue size: %d\n Target: %s\n Actual: %s, Return: %s, Distance: %f\n", 
+                trajectoryQueue.size(), deltaState.toString().c_str(), actualState.toString().c_str(), returnState.toString().c_str(), distance);
             trajectoryQueue.pop();
             if(!trajectoryQueue.empty())
                 returnState = trajectoryQueue.front();
-            printf("Target state close enough to goal state. Queue size: %d\n Target: %s\n Actual: %s\n", 
-                trajectoryQueue.size(), deltaState.toString().c_str(), actualState.toString().c_str());
+            
         }
     } 
     if(trajectoryQueue.empty()){
